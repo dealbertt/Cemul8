@@ -62,7 +62,6 @@ extern char fileName[20];
 
 void initialize(){
     initializeMemory();
-
     initRegisters();
 }
 

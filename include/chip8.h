@@ -5,9 +5,12 @@
 #define SCREEN_HEIGHT 32
 #define SCREEN_REFRESH_RATE 60 //for the moment
 
+void initialize();
+
 void initializeMemory();
 
 void initRegisters();
 
 void emulateCycle();
+
 #endif

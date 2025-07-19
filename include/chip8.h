@@ -13,4 +13,6 @@ void initRegisters();
 
 void emulateCycle();
 
+void loadProgram(const char *fileName);
+
 #endif

@@ -131,14 +131,30 @@ void emulateCycle(){
             pc += 2;
             break;
 
+        case 0x8000:
+            switch(opcode & 0x000F){
+                case 0x0000: //store the value of VY on VX
+                    V[(opcode & 0X0F00) >> 8] = V[(opcode & 0X00F0) >> 4];
+                    pc += 2;
+                    break;
+            }
+
         case 0xA000:
             I = opcode & 0x0FFF; //We take 0x0FFF because we only care about the last 3 digits, which contain the address that we want to set the register I to
             pc += 2;
             break;
 
+        case 0xB000: //Jump to address NNN + V0
+            pc = (opcode & 0X0FFF) + V[0];
+            break;
+
+        case 0xC000:// random number with a mask of NN
+            break;
+
         default:
             printf("Unkonwn opcode: 0x%X\n", opcode);
     } 
+
 
     if(delay_timer > 0){
         delay_timer--;

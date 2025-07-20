@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "../include/chip8.h"
 
 //CHIP-8 specifications
@@ -43,7 +44,7 @@ unsigned char chip8_fontset[80] =
 //0x000-0x1FF - Chip 8 interpreter (contains font set in emu)
 //0x050-0x0A0 - Used for the built in 4x5 pixel font set (0-F)
 //0x200-0xFFF - Program ROM and work RAM
-
+char fileName[20];
 void initialize(){
     initializeMemory();
 
@@ -165,4 +166,9 @@ void emulateCycle(){
             sound_timer--;
         }
     }
+}
+
+void setFileName(const char *argName){
+    strcpy(fileName, argName);
+    printf("FileName: %s\n", fileName);
 }

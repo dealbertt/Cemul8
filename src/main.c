@@ -1,7 +1,10 @@
 #include <stdio.h>
+#include "../include/chip8.h"
 #include <SDL3/SDL.h>
 
-int main(){
-    printf("Hello World\n");
+int main(int argc, char **argv){
+    if(argc > 1){
+        setFileName(argv[1]);
+    }
     return 0;
 }

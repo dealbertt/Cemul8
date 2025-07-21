@@ -16,6 +16,6 @@ void emulateCycle();
 
 void loadProgram(const char *fileName);
 
-void setFileName(const char *argName);
+int setFileName(const char *argName);
 
 #endif

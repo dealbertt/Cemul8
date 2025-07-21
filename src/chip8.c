@@ -168,7 +168,14 @@ void emulateCycle(){
     }
 }
 
-void setFileName(const char *argName){
+int setFileName(const char *argName){
+    if(strstr(argName, ".ch8") == NULL || strstr(argName, ".c8") == NULL){
+        printf("Please select a file with the extension .ch8 or .c8\n");
+        return -1;
+    }
+
     strcpy(fileName, argName);
     printf("FileName: %s\n", fileName);
+
+    return 0;
 }

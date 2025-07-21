@@ -5,15 +5,10 @@
 #define SCREEN_HEIGHT 32
 #define SCREEN_REFRESH_RATE 60 //for the moment
                                
-#if DEBUG_OUTPUT
-#define VERBOSE_DEBUG_OUTPUT 1
-#else
-#define VERBOSE_DEBUG_OUTPUT 0
-#endif
-
-                               
-
-
+#include <stdbool.h>
+typedef struct{
+    bool debugOutput;
+}Config;
 void initialize();
 
 void initializeMemory();

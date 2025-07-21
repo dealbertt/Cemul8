@@ -1,10 +1,15 @@
 #include <stdio.h>
 #include "../include/chip8.h"
 #include <SDL3/SDL.h>
+#include <string.h>
 
+Config globalConfig = {.debugOutput = false};
 int main(int argc, char **argv){
-    if(VERBOSE_DEBUG_OUTPUT){
-        printf("Verbose output enabled\n");
+    for(int i = 0; i < argc; i++){
+        if(strcmp(argv[i], "-DEBUG_OUTPUT") == 0){
+            printf("Verbose output enabled\n");
+            globalConfig.debugOutput = true;
+        }
     }
     if(argc > 1){
         setFileName(argv[1]);

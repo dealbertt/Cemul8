@@ -4,6 +4,9 @@
 #include <string.h>
 
 Config globalConfig = {.debugOutput = false};
+
+
+extern char fileName[20];
 int main(int argc, char **argv){
     for(int i = 0; i < argc; i++){
         if(strcmp(argv[i], "-DEBUG_OUTPUT") == 0){
@@ -17,6 +20,6 @@ int main(int argc, char **argv){
         printf("Please select a file to load in the emulator!\n");
         return -1;
     }
-    //some function to start the emulator
+    loadProgram(fileName);
     return 0;
 }

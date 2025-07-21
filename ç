@@ -80,27 +80,16 @@ int loadProgram(const char *fileName){
         printf("Error while trying to open the loaded file!\n");
         return -1;
     }
-    fseek(ptr, 0, SEEK_END); //Go to the end of the file
+    fseek(ptr, 0, SEEK_END);
 
-    long fileSize = ftell(ptr); //Use ftell to get the size of said file
+    long fileSize = ftell(ptr);
 
-    rewind(ptr); //Go back to the beggining of the file using rewind, first time i have ever heard of it
-    
-    if(fileSize > (MEMORY - 512)){
-        printf("Program selected is too big to load on the emulator!\nPlease select a smaller program\n");
-        fclose(ptr);
-        return -1;
-    }
+    int bufferSize = 100;
 
-    size_t bytesRead = fread(&memory[512], 1, fileSize, ptr); //Return the total number of bytes read, which if everything goes fine, should be equal to the fileSize
-    if(bytesRead != fileSize){
-        printf("Error trying to read the program\n");
-        fclose(ptr);
-        return -1;
-    }
-
+    for(int i = 512; i < bufferSize; i++){
+        //memory[i] = buffer[i];
+    } 
     fclose(ptr);
-    printf("Program loaded in memory successfully!\n");
     return 0;
 }
 
@@ -191,7 +180,7 @@ void emulateCycle(){
 }
 
 int setFileName(const char *argName){
-    if(strstr(argName, ".ch8") == NULL && strstr(argName, ".c8") == NULL){
+    if(strstr(argName, ".ch8") == NULL || strstr(argName, ".c8") == NULL){
         printf("Please select a file with the extension .ch8 or .c8\n");
         return -1;
     }

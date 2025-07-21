@@ -56,9 +56,11 @@ void initializeMemory(){
     for(int i = 0; i < 80; i++){
         memory[i] = chip8_fontset[i];
     }
+
     for(int i = 80; i < MEMORY; i++){
         memory[i] = 0x00;
     }
+
     for(int i = 0; i < 16; i++){
         stack[i] = 0;
     }
@@ -71,16 +73,21 @@ void initRegisters(){
     I = 0;
     pc = 0x200;
 }
-/*
-void loadProgram(const char *fileName){
+
+int loadProgram(const char *fileName){
     FILE *ptr = fopen(fileName, "rb");
+    if(ptr == NULL){
+        printf("Error while trying to open the loaded file!\n");
+        return -1;
+    }
+
     int bufferSize = 100;
-    for(int i = 0; i < bufferSize; i++){
-        memory[i + 512] = buffer[i];
+
+    for(int i = 512; i < bufferSize; i++){
+        //memory[i] = buffer[i];
     } 
-    
+    return 0;
 }
-*/
 
 void emulateCycle(){
     //FETCH
@@ -175,7 +182,7 @@ int setFileName(const char *argName){
     }
 
     strcpy(fileName, argName);
-    printf("FileName: %s\n", fileName);
+    //printf("FileName: %s\n", fileName);
 
     return 0;
 }

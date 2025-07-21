@@ -14,7 +14,7 @@ void initRegisters();
 
 void emulateCycle();
 
-void loadProgram(const char *fileName);
+int loadProgram(const char *fileName);
 
 int setFileName(const char *argName);
 

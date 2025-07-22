@@ -1,6 +1,7 @@
 #ifndef CHIP8_H
 #define CHIP8_H
 #define MEMORY 4096
+#define CPU_FREQ 500
 #define SCREEN_WIDTH 64
 #define SCREEN_HEIGHT 32
 #define SCREEN_REFRESH_RATE 60 //for the moment
@@ -20,7 +21,9 @@ void initializeMemory();
 
 void initRegisters();
 
-void emulateCycle();
+void emulateCycle(); //Emulates
+
+unsigned short fetchOpcode();
 
 int loadProgram(const char *fileName);
 

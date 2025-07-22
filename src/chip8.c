@@ -23,22 +23,22 @@ unsigned short sp; //stack pointer
 unsigned char keyPad[16];
 unsigned char chip8_fontset[80] =
 { 
-  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
-  0x20, 0x60, 0x20, 0x20, 0x70, // 1
-  0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
-  0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-  0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-  0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-  0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-  0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-  0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-  0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
-  0xF0, 0x90, 0xF0, 0x90, 0x90, // A
-  0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-  0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-  0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+    0x20, 0x60, 0x20, 0x20, 0x70, // 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+    0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+    0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+    0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+    0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
 //0x000-0x1FF - Chip 8 interpreter (contains font set in emu)
@@ -65,6 +65,7 @@ void initializeMemory(){
     for(int i = 0; i < 16; i++){
         stack[i] = 0;
     }
+    pc = 0x200;
 }
 
 void initRegisters(){
@@ -72,7 +73,6 @@ void initRegisters(){
         V[i] = 0;
     }
     I = 0;
-    pc = 0x200;
 }
 
 int loadProgram(const char *fileName){
@@ -86,7 +86,7 @@ int loadProgram(const char *fileName){
     long fileSize = ftell(ptr); //Use ftell to get the size of said file
 
     rewind(ptr); //Go back to the beggining of the file using rewind, first time i have ever heard of it
-    
+
     if(fileSize > (MEMORY - 512)){
         printf("Program selected is too big to load on the emulator!\nPlease select a smaller program\n");
         fclose(ptr);
@@ -107,7 +107,7 @@ int loadProgram(const char *fileName){
 
 void emulateCycle(){
     //FETCH
-    opcode = memory[pc] << 8 | memory[pc + 1];
+    opcode = fetchOpcode();
 
     //DECODE
     switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 
@@ -120,7 +120,7 @@ void emulateCycle(){
             sp++; //avoid overwriting the current stack
             pc = opcode & 0x0FFF;
             break;
-        
+
         case 0x3000:
             if(V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF)){
                 pc += 4;
@@ -190,7 +190,7 @@ void emulateCycle(){
                     }
                     pc += 2;
                     break;
-                    
+
                 case 0x0005: //Subtract the value of register VY from register VX
                     substraction = V[(opcode & 0X0F00) >> 8] - V[(opcode & 0X00F0) >> 4];
                     V[(opcode & 0X0F00) >> 8] = substraction;
@@ -244,14 +244,14 @@ void emulateCycle(){
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
             break;
         case 0xE000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
-                switch (opcode & 0x000F) {
-                    case 0x000E: //Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
+            switch (opcode & 0x000F) {
+                case 0x000E: //Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
 
-                        break;
+                    break;
 
-                    case 0x0001://Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
-                        break;
-                }
+                case 0x0001://Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
+                    break;
+            }
             break;
 
         case 0xF000:
@@ -312,6 +312,10 @@ void emulateCycle(){
             sound_timer--;
         }
     }
+}
+
+unsigned short fetchOpcode(){
+    return memory[pc] << 8 | memory[pc + 1];
 }
 
 int setFileName(const char *argName){

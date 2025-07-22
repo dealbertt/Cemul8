@@ -6,9 +6,14 @@
 #define SCREEN_REFRESH_RATE 60 //for the moment
                                
 #include <stdbool.h>
+#include <SDL3/SDL.h>
+
 typedef struct{
     bool debugOutput;
+    SDL_Window *window;
+    SDL_Renderer *renderer;
 }Config;
+
 void initialize();
 
 void initializeMemory();

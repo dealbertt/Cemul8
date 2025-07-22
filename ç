@@ -281,21 +281,14 @@ void emulateCycle(){
                     break;
 
                 case 0x0029://Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
+                    I += V[(opcode & 0X0F00) >> 8]; 
                     pc+= 2;
                     break;
 
-                case 0x0033://Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
+                case 0x0033://Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
+                    I += V[(opcode & 0X0F00) >> 8]; 
                     pc+= 2;
                     break;
-
-                case 0x0055: //Store the values of registers V0 to VX inclusive in memory starting at address I. I is set to I + X + 1 after operation²
-                    pc+= 2;
-                    break;
-
-                case 0x0065: //Fill registers V0 to VX inclusive with the values stored in memory starting at address I. I is set to I + X + 1 after operation²
-                    pc+= 2;
-                    break;
-
             }
             break;
         default:

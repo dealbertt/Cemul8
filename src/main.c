@@ -3,10 +3,10 @@
 #include <SDL3/SDL.h>
 #include <string.h>
 
+extern char fileName[20];
+
 Config globalConfig = {.debugOutput = false};
 
-
-extern char fileName[20];
 int main(int argc, char **argv){
     for(int i = 0; i < argc; i++){
         if(strcmp(argv[i], "-DEBUG_OUTPUT") == 0){

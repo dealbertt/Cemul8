@@ -16,9 +16,11 @@ int main(int argc, char **argv){
         SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error trying to initialize SDL: %s\n", SDL_GetError());
         return -1;
     }
-    if(!SDL_CreateWindowAndRenderer("Chip-8", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE, &globalConfig.window, &globalConfig.renderer)){
+    if(!SDL_CreateWindowAndRenderer("Chip-8", SCREEN_WIDTH * 20, SCREEN_HEIGHT * 20, SDL_WINDOW_RESIZABLE, &globalConfig.window, &globalConfig.renderer)){
          SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error on SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
     }
+    SDL_RenderPresent(globalConfig.renderer);
+    SDL_Delay(1000);
 
     for(int i = 0; i < argc; i++){
         if(strcmp(argv[i], "-DEBUG_OUTPUT") == 0){

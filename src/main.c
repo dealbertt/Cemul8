@@ -7,7 +7,6 @@
 
 #include "../include/chip8.h"
 
-#define SDL_HINT_NO_SIGNAL_HANDLERS   "SDL_NO_SIGNAL_HANDLERS"
 
 extern char fileName[20];
 

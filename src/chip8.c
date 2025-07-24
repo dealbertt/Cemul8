@@ -1,6 +1,13 @@
+#include <SDL3/SDL_stdinc.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_timer.h>
+
 #include "../include/chip8.h"
+
 
 //CHIP-8 specifications
 unsigned short opcode; //the operation code of the instruction
@@ -46,6 +53,8 @@ unsigned char chip8_fontset[80] =
 //0x200-0xFFF - Program ROM and work RAM
 
 char fileName[20];
+extern Config globalConfig;
+
 void initialize(){
     initializeMemory();
 
@@ -103,6 +112,27 @@ int loadProgram(const char *fileName){
     fclose(ptr);
     printf("Program loaded in memory successfully!\n");
     return 0;
+}
+
+void simulateCpu(){
+    globalConfig.running = true;
+
+    Uint64 frequency = SDL_GetPerformanceFrequency(); 
+    Uint64 lastCycleTime = SDL_GetPerformanceCounter();
+    while(globalConfig.running){
+
+        Uint64 now = SDL_GetPerformanceCounter();
+        double elapsedTime = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
+
+        if(elapsedTime >= 2){
+            emulateCycle();
+            lastCycleTime = now;
+        }else{
+            SDL_Delay(1);
+        }
+
+    }
+
 }
 
 void emulateCycle(){
@@ -295,7 +325,6 @@ void emulateCycle(){
                 case 0x0065: //Fill registers V0 to VX inclusive with the values stored in memory starting at address I. I is set to I + X + 1 after operation²
                     pc+= 2;
                     break;
-
             }
             break;
         default:

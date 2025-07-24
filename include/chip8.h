@@ -11,6 +11,7 @@
 
 typedef struct{
     bool debugOutput;
+    bool running;
     SDL_Window *window;
     SDL_Renderer *renderer;
 }Config;
@@ -21,7 +22,9 @@ void initializeMemory();
 
 void initRegisters();
 
-void emulateCycle(); //Emulates
+void emulateCycle(); 
+
+void simulateCpu();
 
 unsigned short fetchOpcode();
 

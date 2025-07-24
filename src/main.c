@@ -7,9 +7,11 @@
 
 #include "../include/chip8.h"
 
+#define SDL_HINT_NO_SIGNAL_HANDLERS   "SDL_NO_SIGNAL_HANDLERS"
+
 extern char fileName[20];
 
-Config globalConfig = {.debugOutput = false};
+Config globalConfig = {.debugOutput = false, .running = false};
 
 int main(int argc, char **argv){
     for(int i = 0; i < argc; i++){
@@ -35,5 +37,9 @@ int main(int argc, char **argv){
     }
 
     loadProgram(fileName);
+    simulateCpu();
+
+    SDL_Quit();
     return 0;
 }
+

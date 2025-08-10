@@ -356,3 +356,8 @@ int setFileName(const char *argName){
     printf("FileName: %s\n", fileName);
     return 0;
 }
+
+int handleKeyboard(){
+
+    return 0;
+}

@@ -31,4 +31,6 @@ unsigned short fetchOpcode();
 int loadProgram(const char *fileName);
 
 int setFileName(const char *argName);
+
+int handleKeyboard();
 #endif

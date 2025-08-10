@@ -34,7 +34,6 @@ int main(int argc, char **argv){
         SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error on SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
         return -1;
     }
-
     loadProgram(fileName);
     simulateCpu();
 

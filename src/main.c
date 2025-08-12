@@ -1,9 +1,11 @@
-#include <SDL3/SDL_video.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
+#include <stdlib.h>
 
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_video.h>
 
 #include "../include/chip8.h"
 
@@ -12,7 +14,14 @@ extern char fileName[20];
 
 Config globalConfig = {.debugOutput = false, .running = false};
 
+void quit(int signum);
+
 int main(int argc, char **argv){
+    signal(SIGTERM, quit);
+    signal(SIGQUIT, quit);
+    signal(SIGKILL, quit);
+    signal(SIGINT, quit);
+
     for(int i = 0; i < argc; i++){
         if(strcmp(argv[i], "-DEBUG_OUTPUT") == 0){
             printf("Verbose output enabled\n");
@@ -41,3 +50,7 @@ int main(int argc, char **argv){
     return 0;
 }
 
+void quit(int signum){
+    printf("Signal received!: %d\n", signum);
+    exit(-1);
+}

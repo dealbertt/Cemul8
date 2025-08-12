@@ -1,9 +1,11 @@
+#include <SDL3/SDL_keyboard.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_timer.h>
+#include <SDL3/SDL_events.h>
 
 #include "../include/chip8.h"
 
@@ -358,6 +360,16 @@ int setFileName(const char *argName){
 }
 
 int handleKeyboard(){
+    SDL_Event event;
+    SDL_PollEvent(&event);
 
+    const bool *pressed = SDL_GetKeyboardState(NULL);
+    if(event.type == SDL_EVENT_QUIT){
+        SDL_Quit();
+    }
+
+    if(event.type == SDL_EVENT_KEY_DOWN){
+        //add different thigns in here 
+    }
     return 0;
 }

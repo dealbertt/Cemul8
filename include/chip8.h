@@ -33,5 +33,5 @@ int loadProgram(const char *fileName);
 int setFileName(const char *argName);
 
 int handleKeyboard();
-int waitForPress();
+unsigned char waitForPress();
 #endif

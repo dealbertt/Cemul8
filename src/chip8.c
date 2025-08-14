@@ -1,5 +1,6 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_log.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -293,8 +294,16 @@ void emulateCycle(){
                     pc+= 2;
                     break;
 
+                    unsigned char press;
                 case 0x000A://Wait for a keypress and store the result in register VX
-
+                    press = waitForPress();
+                    if(press == 0xFF){
+                        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Wrong key pressed, not included in the chip-8 keypad");
+                    }else if(press == 0xF0){
+                        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "An error happened while trying to get the SDL Keyboard state");
+                    }else{
+                        V[(opcode & 0x0F00) >> 8] = waitForPress();
+                    }
                     pc+= 2;
                     break;
 
@@ -318,6 +327,9 @@ void emulateCycle(){
                     break;
 
                 case 0x0033://Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
+                    memory[I] = V[(opcode & 0x0F00) >> 8] / 100;
+                    memory[I + 1] = (V[(opcode & 0x0F00) >> 8] / 10) % 10;
+                    memory[I + 2] = V[(opcode & 0x0F00) >> 8]  % 10;
                     pc+= 2;
                     break;
 
@@ -368,7 +380,7 @@ int handleKeyboard(){
     const bool *pressed = SDL_GetKeyboardState(NULL);
     if(event.type == SDL_EVENT_QUIT){
         SDL_Quit();
-        return -2;
+        return 0xF0;
     }
 
     if(event.type == SDL_EVENT_KEY_DOWN){
@@ -377,7 +389,7 @@ int handleKeyboard(){
     return 0;
 }
 
-int waitForPress(){
+unsigned char waitForPress(){
     SDL_Event event;
     SDL_WaitEvent(&event);
     const bool *pressed = SDL_GetKeyboardState(NULL);
@@ -418,5 +430,5 @@ int waitForPress(){
     }else if(pressed[SDL_SCANCODE_V]){
         return 0xF;
     }
-    return 0;
+    return 0xFF;
 }

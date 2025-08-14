@@ -1,3 +1,4 @@
+#include <SDL3/SDL_init.h>
 #include <SDL3/SDL_keyboard.h>
 #include <stdio.h>
 #include <string.h>
@@ -293,6 +294,7 @@ void emulateCycle(){
                     break;
 
                 case 0x000A://Wait for a keypress and store the result in register VX
+
                     pc+= 2;
                     break;
 
@@ -366,10 +368,33 @@ int handleKeyboard(){
     const bool *pressed = SDL_GetKeyboardState(NULL);
     if(event.type == SDL_EVENT_QUIT){
         SDL_Quit();
+        return -2;
     }
 
     if(event.type == SDL_EVENT_KEY_DOWN){
-        //add different thigns in here 
+        //add different things in here 
+    }
+    return 0;
+}
+
+int waitForPress(){
+    SDL_Event event;
+    SDL_WaitEvent(&event);
+    const bool *pressed = SDL_GetKeyboardState(NULL);
+    if(event.type == SDL_EVENT_QUIT){
+        SDL_Quit();
+        return -2;
+    }
+    if(pressed[SDL_SCANCODE_1]){
+        return 0x1;
+    }else if(pressed[SDL_SCANCODE_2]){
+        return 0x2;
+    }else if(pressed[SDL_SCANCODE_3]){
+        return 0x3;
+    }else if(pressed[SDL_SCANCODE_4]){
+        return 0xC;
+    }else if(pressed[SDL_SCANCODE_Q]){
+        return 0x5;
     }
     return 0;
 }

@@ -1,13 +1,14 @@
-#include <SDL3/SDL_init.h>
-#include <SDL3/SDL_keyboard.h>
-#include <SDL3/SDL_log.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_log.h>
 
 #include "../include/chip8.h"
 
@@ -271,7 +272,8 @@ void emulateCycle(){
             pc = (opcode & 0X0FFF) + V[0];
             break;
 
-        case 0xC000://Random number with a mask of NN
+        case 0xC000://Set VX Random number with a mask of NN
+            generateRandomNN(opcode & 0x00FF);
             break;
 
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
@@ -294,7 +296,7 @@ void emulateCycle(){
                     pc+= 2;
                     break;
 
-                    unsigned char press;
+                unsigned char press;
                 case 0x000A://Wait for a keypress and store the result in register VX
                     press = waitForPress();
                     if(press == 0xFF){
@@ -431,4 +433,10 @@ unsigned char waitForPress(){
         return 0xF;
     }
     return 0xFF;
+}
+
+unsigned char generateRandomNN(int mask){
+    int randomNumber = rand() % (255 + 1 - 0) + 0;
+
+    return randomNumber & mask;
 }

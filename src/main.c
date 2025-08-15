@@ -8,6 +8,7 @@
 #include <SDL3/SDL_video.h>
 
 #include "../include/chip8.h"
+#include "../include/functions.h"
 
 
 extern char fileName[20];

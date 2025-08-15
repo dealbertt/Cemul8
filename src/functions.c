@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_timer.h>
@@ -9,6 +8,8 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_log.h>
+
+#include "../include/functions.h"
 
 char fileName[20];
 
@@ -45,8 +46,15 @@ unsigned char waitForPress(){
     const bool *pressed = SDL_GetKeyboardState(NULL);
     if(event.type == SDL_EVENT_QUIT){
         SDL_Quit();
-        return -2;
+        return 0xF0;
     }
+    if(event.type == SDL_EVENT_KEY_DOWN){
+        return returnKeyEquivalent(pressed);
+    }
+    return 0xFF;
+}
+
+unsigned char returnKeyEquivalent(const bool *pressed){
     if(pressed[SDL_SCANCODE_1]){
         return 0x1;
     }else if(pressed[SDL_SCANCODE_2]){

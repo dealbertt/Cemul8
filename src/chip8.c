@@ -140,6 +140,10 @@ void simulateCpu(){
 
 }
 
+unsigned short fetchOpcode(){
+    return memory[pc] << 8 | memory[pc + 1];
+}
+
 void emulateCycle(){
     //FETCH
     opcode = fetchOpcode();
@@ -282,7 +286,7 @@ void emulateCycle(){
         case 0xE000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
             switch (opcode & 0x000F) {
                 case 0x000E: //Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
-
+                     
                     break;
 
                 case 0x0001://Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
@@ -359,9 +363,5 @@ void emulateCycle(){
             sound_timer--;
         }
     }
-}
-
-unsigned short fetchOpcode(){
-    return memory[pc] << 8 | memory[pc + 1];
 }
 

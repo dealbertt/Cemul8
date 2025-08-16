@@ -294,6 +294,11 @@ void emulateCycle(){
                     break;
 
                 case 0x0001://Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
+                    if(handleKeyPad() != V[(opcode & 0x0F00) >> 8]){
+                        pc += 4;
+                    }else{
+                        pc += 2;
+                    }                         
                     break;
             }
             break;

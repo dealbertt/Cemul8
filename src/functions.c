@@ -24,7 +24,7 @@ int setFileName(const char *argName){
     return 0;
 }
 
-int handleKeyboard(){
+int handleRealKeyboard(){
     SDL_Event event;
     SDL_PollEvent(&event);
 
@@ -40,6 +40,23 @@ int handleKeyboard(){
     return 0;
 }
 
+
+unsigned char handleKeyPad(){
+    SDL_Event event;
+    SDL_PollEvent(&event);
+
+    const bool *pressed = SDL_GetKeyboardState(NULL);
+    if(event.type == SDL_EVENT_QUIT){
+        SDL_Quit();
+        return 0xF0;
+    }
+
+    if(event.type == SDL_EVENT_KEY_DOWN){
+        return returnKeyEquivalent(pressed);
+    }
+    return 0;
+
+}
 unsigned char waitForPress(){
     SDL_Event event;
     SDL_WaitEvent(&event);
@@ -96,3 +113,4 @@ unsigned char generateRandomNN(int mask){
 
     return randomNumber & mask;
 }
+

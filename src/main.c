@@ -10,7 +10,6 @@
 #include "../include/chip8.h"
 #include "../include/functions.h"
 
-
 extern char fileName[20];
 
 Config globalConfig = {.debugOutput = false, .running = false};

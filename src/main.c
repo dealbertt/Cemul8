@@ -51,6 +51,6 @@ int main(int argc, char **argv){
 }
 
 void quit(int signum){
-    printf("Signal received!: %d\n", signum);
+    (void)signum;
     exit(-1);
 }

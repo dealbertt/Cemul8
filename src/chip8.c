@@ -130,6 +130,7 @@ void simulateCpu(){
         double elapsedTime = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
 
         if(elapsedTime >= 2){
+            printf("Cycle\n");
             emulateCycle();
             lastCycleTime = now;
         }else{
@@ -368,6 +369,7 @@ void emulateCycle(){
             break;
         default:
             printf("Unkonwn opcode: 0x%X\n", opcode);
+            pc += 2;
     } 
 
     if(delay_timer > 0){

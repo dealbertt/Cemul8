@@ -35,7 +35,7 @@ int handleRealKeyboard(){
     }
 
     if(event.type == SDL_EVENT_KEY_DOWN){
-        //add different things in here 
+        returnKeyEquivalent(pressed);
     }
     return 0;
 }
@@ -110,7 +110,6 @@ unsigned char returnKeyEquivalent(const bool *pressed){
 
 unsigned char generateRandomNN(int mask){
     int randomNumber = rand() % (255 + 1 - 0) + 0;
-
     return randomNumber & mask;
 }
 

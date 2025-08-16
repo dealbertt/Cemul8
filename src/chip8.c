@@ -349,7 +349,11 @@ void emulateCycle(){
                     pc+= 2;
                     break;
 
-                case 0x0055: //Store the values of registers V0 to VX inclusive in memory starting at address I. I is set to I + X + 1 after operation²
+                    case 0x0055: //Store the values of registers V0 to VX inclusive in memory starting at address I. I is set to I + X + 1 after operation²
+                    for(int i = 0; i < (opcode & 0x0F00); i++){
+                        memory[I] = V[i];
+                    }
+                    I = I + (opcode & 0x0F00) + 1;
                     pc+= 2;
                     break;
 

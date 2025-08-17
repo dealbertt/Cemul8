@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_timer.h>
@@ -33,6 +32,7 @@ unsigned short stack[16];
 unsigned short sp; //stack pointer
 
 unsigned char keyPad[16];
+//I have no idea how to implement the pad, typeshit
 unsigned char chip8_fontset[80] =
 { 
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -56,6 +56,7 @@ unsigned char chip8_fontset[80] =
 //0x000-0x1FF - Chip 8 interpreter (contains font set in emu)
 //0x050-0x0A0 - Used for the built in 4x5 pixel font set (0-F)
 //0x200-0xFFF - Program ROM and work RAM
+
 
 extern Config globalConfig;
 extern char fileName[20];

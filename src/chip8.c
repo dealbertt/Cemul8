@@ -382,4 +382,3 @@ void emulateCycle(){
         }
     }
 }
-

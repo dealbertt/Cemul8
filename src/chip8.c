@@ -33,6 +33,7 @@ unsigned short sp; //stack pointer
 
 unsigned char keyPad[16];
 //I have no idea how to implement the pad, typeshit
+
 unsigned char chip8_fontset[80] =
 { 
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -283,8 +284,9 @@ void emulateCycle(){
             break;
 
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
+            drawSprite(V[(opcode & 0x0F00) >> 8], V[(opcode & 0x00F0) >> 4], opcode & 0x000F, globalConfig.window, globalConfig.renderer);             
             break;
-        case 0xE000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
+        case 0xE000: 
             switch (opcode & 0x000F) {
                 case 0x000E: //Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
                     if(handleKeyPad() == V[(opcode & 0x0F00) >> 8]){
@@ -382,4 +384,12 @@ void emulateCycle(){
             sound_timer--;
         }
     }
+}
+
+//Because this function needs to work with memory and the Index register, is going to be placed at the chip8.c file for the moment
+int drawSprite(unsigned char x, unsigned char y, unsigned char nBytes, SDL_Window *window, SDL_Renderer *renderer){
+    for(int i = 0; i < nBytes; i++){
+        (void)memory[I];
+    }  
+    return 0;
 }

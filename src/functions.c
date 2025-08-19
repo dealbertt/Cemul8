@@ -12,6 +12,7 @@
 #include "../include/functions.h"
 
 char fileName[20];
+extern unsigned char memory[4096]; //the total memory of the chip-8
 
 int setFileName(const char *argName){
     if(strstr(argName, ".ch8") == NULL && strstr(argName, ".c8") == NULL){
@@ -113,3 +114,4 @@ unsigned char generateRandomNN(int mask){
     return randomNumber & mask;
 }
 
+    

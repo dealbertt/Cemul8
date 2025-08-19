@@ -1,3 +1,4 @@
+#include <SDL3/SDL_timer.h>
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
@@ -43,6 +44,7 @@ int main(int argc, char **argv){
         SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error on SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
         return -1;
     }
+    SDL_RenderPresent(globalConfig.renderer);
     loadProgram(fileName);
     simulateCpu();
 

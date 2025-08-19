@@ -1,3 +1,4 @@
+#include <SDL3/SDL_render.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +7,7 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_init.h>
+#include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_log.h>
 
@@ -33,6 +35,9 @@ unsigned short sp; //stack pointer
 
 unsigned char keyPad[16];
 //I have no idea how to implement the pad, typeshit
+
+//Flag for indicating when the screen needs to be updated
+bool drawFlag = false;
 
 unsigned char chip8_fontset[80] =
 { 
@@ -284,7 +289,30 @@ void emulateCycle(){
             break;
 
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
-            drawSprite(V[(opcode & 0x0F00) >> 8], V[(opcode & 0x00F0) >> 4], opcode & 0x000F, globalConfig.window, globalConfig.renderer);             
+            {
+                unsigned short x = V[(opcode & 0x0F00) >> 8];
+                unsigned short y = V[(opcode & 0x00F0) >> 4];
+                unsigned short height = opcode & 0x000F;
+                unsigned short pixel;
+
+                V[0xF] = 0;
+                for (int yline = 0; yline < height; yline++)
+                {
+                    pixel = memory[I + yline];
+                    for(int xline = 0; xline < 8; xline++)
+                    {
+                        if((pixel & (0x80 >> xline)) != 0)
+                        {
+                            if(gpx[(x + xline + ((y + yline) * 64))] == 1)
+                                V[0xF] = 1;                                 
+                            gpx[x + xline + ((y + yline) * 64)] ^= 1;
+                        }
+                    }
+                }
+                drawFlag = true;
+                pc += 2;
+            }
+            drawSprite(V[(opcode & 0x0F00) >> 8], V[(opcode & 0x00F0) >> 4], opcode & 0x000F, globalConfig.window, globalConfig.renderer);
             break;
         case 0xE000: 
             switch (opcode & 0x000F) {
@@ -392,7 +420,8 @@ int drawSprite(unsigned char x, unsigned char y, unsigned char nBytes, SDL_Windo
         //unsigned char mask = 0;
         for(int i = 7; i >= 0; i++){
             if((memory[I + row] >> i) & 0x01){
-                printf("Paint pixel!\n");
+                SDL_Rect rect = {x, y, 25, 25};
+                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
             }else{
                 printf("Do not paint pixel!\n");
             }

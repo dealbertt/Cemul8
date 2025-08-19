@@ -388,8 +388,13 @@ void emulateCycle(){
 
 //Because this function needs to work with memory and the Index register, is going to be placed at the chip8.c file for the moment
 int drawSprite(unsigned char x, unsigned char y, unsigned char nBytes, SDL_Window *window, SDL_Renderer *renderer){
+    
     for(int i = 0; i < nBytes; i++){
-        (void)memory[I];
+        unsigned char mask = 0;
+        for(int i = 0; i <= 7; i++){
+            mask = mask | (1 << i);
+        }
+        unsigned char extracted = (memory[I] & mask) >> 4;
     }  
     return 0;
 }

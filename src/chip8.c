@@ -162,7 +162,7 @@ void emulateCycle(){
         case 0x0000:
             switch(opcode & 0x0FFF){
                 case 0x00E0:
-                    //clearScreen()
+                    clearScreen();
                     pc += 2;
                     break;
                 

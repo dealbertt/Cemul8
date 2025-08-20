@@ -32,7 +32,7 @@ int main(int argc, char **argv){
     if(argc > 1){
         setFileName(argv[1]);
     }else{
-        printf("Please select a file to load in the emulator!\n");
+
         return -1;
     }
 
@@ -45,8 +45,9 @@ int main(int argc, char **argv){
         return -1;
     }
     SDL_RenderPresent(globalConfig.renderer);
-    loadProgram(fileName);
-    simulateCpu();
+    updateScreen();
+    //loadProgram(fileName);
+    //simulateCpu();
 
     SDL_Quit();
     return 0;

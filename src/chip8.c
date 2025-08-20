@@ -24,7 +24,7 @@ unsigned short I; //special register I for memory addresses
 unsigned short pc; //Program counter
 
 
-unsigned char gpx[SCREEN_WIDTH * SCREEN_WIDTH]; //pixels of the screen
+unsigned char gpx[SCREEN_WIDTH * SCREEN_WIDTH]; //pixels of the screen. Total pixels in the array: 2048
 
 unsigned char delay_timer;
 unsigned char sound_timer;
@@ -141,6 +141,9 @@ void simulateCpu(){
             lastCycleTime = now;
         }else{
             SDL_Delay(1);
+        }
+        if(drawFlag){
+            //updateScreen
         }
 
     }
@@ -420,12 +423,25 @@ int drawSprite(unsigned char x, unsigned char y, unsigned char nBytes, SDL_Windo
         //unsigned char mask = 0;
         for(int i = 7; i >= 0; i++){
             if((memory[I + row] >> i) & 0x01){
-                SDL_Rect rect = {x, y, 25, 25};
+                SDL_FRect rect = {x, y, 25, 25};
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                SDL_RenderFillRect(renderer, &rect);
             }else{
                 printf("Do not paint pixel!\n");
             }
         }
     }  
+    return 0;
+}
+
+int updateScreen(){
+    for(int i = 0; i < SCREEN_WIDTH; i++){
+        for(int j = 0; j < SCREEN_HEIGHT; j++){
+            if(!gpx[i * j]){
+                printf("Update pixel: %d %d\n", i, j);
+                printf("Multiplication of pixels: %d\n", i * j);
+            }
+        }
+    }
     return 0;
 }

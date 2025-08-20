@@ -440,8 +440,10 @@ int updateScreen(){
             if(!gpx[i * j]){
                 printf("Update pixel: %d %d\n", i, j);
                 printf("Multiplication of pixels: %d\n", i * j);
+                drawScalatedPixel(i, j, globalConfig.renderer);
             }
         }
     }
+    SDL_RenderPresent(globalConfig.renderer);
     return 0;
 }

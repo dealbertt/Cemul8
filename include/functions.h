@@ -2,6 +2,8 @@
 #define FUNCTIONS_H
 
 
+#include <SDL3/SDL_render.h>
+
 int setFileName(const char *argName);
 
 int handleRealKeyboard();
@@ -13,5 +15,6 @@ unsigned char checkHexValue();
  
 unsigned char generateRandomNN(int mask);
 
+int drawScalatedPixel(int x, int y, SDL_Renderer *renderer);
 
 #endif

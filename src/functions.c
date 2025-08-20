@@ -1,3 +1,4 @@
+#include <SDL3/SDL_render.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -114,4 +115,9 @@ unsigned char generateRandomNN(int mask){
     return randomNumber & mask;
 }
 
-    
+int drawScalatedPixel(int x, int y, SDL_Renderer *renderer){
+    SDL_FRect drawRect = {x * 25, y * 25, 25, 25};
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); //All white
+    SDL_RenderFillRect(renderer , &drawRect); 
+    return 0;
+}

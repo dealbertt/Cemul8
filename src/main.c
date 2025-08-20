@@ -45,8 +45,12 @@ int main(int argc, char **argv){
         return -1;
     }
     SDL_RenderPresent(globalConfig.renderer);
-    loadProgram(fileName);
-    simulateCpu();
+    updateScreen();
+    SDL_Delay(1000);
+    clearScreen();
+    SDL_Delay(1000);
+    //loadProgram(fileName);
+    //simulateCpu();
 
     SDL_Quit();
     return 0;

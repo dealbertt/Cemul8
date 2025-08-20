@@ -136,14 +136,13 @@ void simulateCpu(){
         double elapsedTime = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
 
         if(elapsedTime >= 2){
-            printf("Cycle\n");
             emulateCycle();
             lastCycleTime = now;
         }else{
             SDL_Delay(1);
         }
         if(drawFlag){
-            //updateScreen
+            updateScreen();
         }
 
     }
@@ -160,6 +159,17 @@ void emulateCycle(){
 
     //DECODE
     switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 
+        case 0x0000:
+            switch(opcode & 0x0FFF){
+                case 0x00E0:
+                    //clearScreen()
+                    pc += 2;
+                    break;
+                
+                case 0x00EE:
+                    pc += 2;
+                    break;
+            }
         case 0x1000: //jump to the address NNN
             pc = opcode & 0x0FFF;
             break;
@@ -231,7 +241,6 @@ void emulateCycle(){
                     {
 
                         unsigned int addition = 0;
-                        unsigned int substraction = 0;
                         addition = V[(opcode & 0X0F00) >> 8] + V[(opcode & 0X00F0) >> 4];
                         V[(opcode & 0X0F00) >> 8] = addition;
                         if(addition > 255){
@@ -354,9 +363,9 @@ void emulateCycle(){
                     pc+= 2;
                     break;
 
-                unsigned char press;
                 case 0x000A://Wait for a keypress and store the result in register VX
-                    press = waitForPress();
+                {
+                    unsigned char press = waitForPress();
                     if(press == 0xFF){
                         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Wrong key pressed, not included in the chip-8 keypad");
                     }else if(press == 0xF0){
@@ -365,6 +374,7 @@ void emulateCycle(){
                         V[(opcode & 0x0F00) >> 8] = waitForPress();
                     }
                     pc+= 2;
+                }
                     break;
 
                 case 0x0015://Set the delay timer to the value of register VX
@@ -454,6 +464,20 @@ int updateScreen(){
         }
     }
     //Update the screen once all the pixels (SDL_FRect) have been set
+    SDL_RenderPresent(globalConfig.renderer);
+    return 0;
+}
+
+
+int clearScreen(){
+    for(int x = 0; x < SCREEN_WIDTH; x++){
+        for(int y = 0; y < SCREEN_HEIGHT; y++){
+            gpx[x * y] = 0;
+        }
+    }
+    SDL_FRect screen = {0, 0, SCREEN_WIDTH * 25, SCREEN_HEIGHT * 25};
+    SDL_SetRenderDrawColor(globalConfig.renderer, 0, 0, 0, 255);
+    SDL_RenderFillRect(globalConfig.renderer, &screen);
     SDL_RenderPresent(globalConfig.renderer);
     return 0;
 }

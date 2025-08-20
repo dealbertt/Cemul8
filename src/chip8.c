@@ -438,12 +438,12 @@ int updateScreen(){
     for(int i = 0; i < SCREEN_WIDTH; i++){
         for(int j = 0; j < SCREEN_HEIGHT; j++){
             if(!gpx[i * j]){
-                printf("Update pixel: %d %d\n", i, j);
-                printf("Multiplication of pixels: %d\n", i * j);
+                //The reason it says scalated is because the screen is 25 x the original resolution, otherwise it would be way too small
                 drawScalatedPixel(i, j, globalConfig.renderer);
             }
         }
     }
+    //Update the screen once all the pixels (SDL_FRect) have been set
     SDL_RenderPresent(globalConfig.renderer);
     return 0;
 }

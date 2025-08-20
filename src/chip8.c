@@ -226,30 +226,37 @@ void emulateCycle(){
                     pc += 2;
                     break;
 
-                    unsigned int addition = 0;
-                    unsigned int substraction = 0;
 
                 case 0x0004: //Add the value of register VY to register VX
-                    addition = V[(opcode & 0X0F00) >> 8] + V[(opcode & 0X00F0) >> 4];
-                    V[(opcode & 0X0F00) >> 8] = addition;
-                    if(addition > 255){
-                        V[15] = 0x01; 
-                    }else{
-                        V[15] = 0x00; 
+                    {
+
+                        unsigned int addition = 0;
+                        unsigned int substraction = 0;
+                        addition = V[(opcode & 0X0F00) >> 8] + V[(opcode & 0X00F0) >> 4];
+                        V[(opcode & 0X0F00) >> 8] = addition;
+                        if(addition > 255){
+                            V[15] = 0x01; 
+                        }else{
+                            V[15] = 0x00; 
+                        }
+                        pc += 2;
+
                     }
-                    pc += 2;
                     break;
 
                 case 0x0005: //Subtract the value of register VY from register VX
-                    substraction = V[(opcode & 0X0F00) >> 8] - V[(opcode & 0X00F0) >> 4];
-                    V[(opcode & 0X0F00) >> 8] = substraction;
-                    if(substraction < 0){
-                        V[15] = 0x01; 
-                    }else{
-                        V[15] = 0x00; 
+                    {
+
+                        int substraction = V[(opcode & 0X0F00) >> 8] - V[(opcode & 0X00F0) >> 4];
+                        V[(opcode & 0X0F00) >> 8] = substraction;
+                        if(substraction < 0){
+                            V[15] = 0x01; 
+                        }else{
+                            V[15] = 0x00; 
+                        }
+                        pc += 2;
+                        break;
                     }
-                    pc += 2;
-                    break;
 
                 case 0x0006: //Store the value of register VY shifted right one bit in register VX
                     V[(opcode & 0X0F00) >> 8] = (V[(opcode & 0X00F0) >> 4] >> 1);
@@ -258,10 +265,12 @@ void emulateCycle(){
                     break;
 
                 case 0x0007: //Set register VX to the value of VY minus VX
-                    substraction = (V[(opcode & 0X00F0) >> 4] - V[(opcode & 0X0F00) >> 8]);
-                    V[(opcode & 0X0F00) >> 8] = substraction;
-                    V[15] = V[(opcode & 0X00F0) >> 4] & 0x01;
-                    pc += 2;
+                    {
+                        int substraction = (V[(opcode & 0X00F0) >> 4] - V[(opcode & 0X0F00) >> 8]);
+                        V[(opcode & 0X0F00) >> 8] = substraction;
+                        V[15] = V[(opcode & 0X00F0) >> 4] & 0x01;
+                        pc += 2;
+                    }
                     break;
 
                 case 0x000E: //Store the value of register VY shifted left one bit in register VX
@@ -279,7 +288,7 @@ void emulateCycle(){
             break;
 
         case 0xA000:
-            I = opcode & 0x0FFF; //We take 0x0FFF because we only care about the last 3 digits, which contain the address that we want to set the register I to
+            I = opcode & 0x0FFF; 
             pc += 2;
             break;
 
@@ -308,6 +317,7 @@ void emulateCycle(){
                         {
                             if(gpx[(x + xline + ((y + yline) * 64))] == 1)
                                 V[0xF] = 1;                                 
+
                             gpx[x + xline + ((y + yline) * 64)] ^= 1;
                         }
                     }
@@ -315,7 +325,7 @@ void emulateCycle(){
                 drawFlag = true;
                 pc += 2;
             }
-            drawSprite(V[(opcode & 0x0F00) >> 8], V[(opcode & 0x00F0) >> 4], opcode & 0x000F, globalConfig.window, globalConfig.renderer);
+            //drawSprite(V[(opcode & 0x0F00) >> 8], V[(opcode & 0x00F0) >> 4], opcode & 0x000F, globalConfig.window, globalConfig.renderer);
             break;
         case 0xE000: 
             switch (opcode & 0x000F) {

@@ -167,8 +167,12 @@ void emulateCycle(){
                     break;
                 
                 case 0x00EE:
-                    sp--; //Because we increased when pushing onto the stack to point to the next free slot, we now decrease to retreive the value that was pushed
-                    pc = stack[sp];
+                    if(sp > 0){
+                        sp--; //Because we increased when pushing onto the stack to point to the next free slot, we now decrease to retreive the value that was pushed
+                        pc = stack[sp];
+                    }else{
+                        printf("The stack pointer is less than 0!\nCurrent value of sp: %d\n", sp);
+                    }
                     //pc += 2;
                     break;
             }
@@ -177,9 +181,13 @@ void emulateCycle(){
             break;
 
         case 0x2000: //calls subroutine at address NNN
-            stack[sp] = pc;
-            sp++; //avoid overwriting the current stack
-            pc = opcode & 0x0FFF;
+            if(sp < 16){
+                stack[sp] = pc;
+                sp++; //avoid overwriting the current stack
+                pc = opcode & 0x0FFF;
+            }else{
+                printf("The stack pointer is greater than 15!\nCurrent value of sp: %d\n", sp);
+            }
             break;
 
         case 0x3000:

@@ -167,7 +167,8 @@ void emulateCycle(){
                     break;
                 
                 case 0x00EE:
-                    pc += 2;
+                    pc = stack[15];
+                    //pc += 2;
                     break;
             }
         case 0x1000: //jump to the address NNN

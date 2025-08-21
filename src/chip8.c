@@ -167,6 +167,7 @@ void emulateCycle(){
                     break;
                 
                 case 0x00EE:
+                    sp--; //Because we increased when pushing onto the stack to point to the next free slot, we now decrease to retreive the value that was pushed
                     pc = stack[sp];
                     //pc += 2;
                     break;

@@ -167,7 +167,7 @@ void emulateCycle(){
                     break;
                 
                 case 0x00EE:
-                    pc = stack[15];
+                    pc = stack[sp];
                     //pc += 2;
                     break;
             }

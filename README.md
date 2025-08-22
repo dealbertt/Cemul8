@@ -1,9 +1,10 @@
 My own chip-8 emulator written in C  
-Right now to compile just use:  
+Right now to build the project use the makefile:  
 
 ```cmd
-gcc src/main.c -o chip src/chip8.c -Wall -Werror -lSDL3
+make
 ```
+
 and then to run the emulator:  
 
 ```cmd

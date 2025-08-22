@@ -4,7 +4,11 @@ Right now to build the project use the makefile:
 ```cmd
 make
 ```
+To delete the project and the obj files:  
 
+```cmd
+make clean 
+```
 and then to run the emulator:  
 
 ```cmd

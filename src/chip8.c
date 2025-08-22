@@ -156,6 +156,7 @@ unsigned short fetchOpcode(){
 void emulateCycle(){
     //FETCH
     opcode = fetchOpcode();
+    printf("Opcode: 0x%d\n", opcode);
 
     //DECODE
     switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 

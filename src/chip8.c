@@ -1,4 +1,3 @@
-#include <SDL3/SDL_render.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +6,7 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_init.h>
+#include <SDL3/SDL_render.h>
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_log.h>
@@ -15,6 +15,7 @@
 #include "../include/functions.h"
 
 
+short scalingFactor = 25;
 //CHIP-8 specifications
 unsigned short opcode; //the operation code of the instruction
 unsigned char memory[MEMORY]; //the total memory of the chip-8
@@ -25,6 +26,7 @@ unsigned short pc; //Program counter
 
 
 unsigned char gpx[SCREEN_WIDTH * SCREEN_WIDTH]; //pixels of the screen. Total pixels in the array: 2048
+                                                //Keep in mind that this are the screens of the CHIP-8, but not of the actual screen that is showed, that is because the original resolution is way too small
 
 unsigned char delay_timer;
 unsigned char sound_timer;
@@ -85,7 +87,7 @@ void initializeMemory(){
     for(int i = 0; i < 16; i++){
         stack[i] = 0;
     }
-    pc = 0x200;
+    pc = 0x200; //After the part of the memory that has the fontset loaded
 }
 
 void initRegisters(){
@@ -126,10 +128,10 @@ int loadProgram(const char *fileName){
 }
 
 void simulateCpu(){
-    globalConfig.running = true;
-
     Uint64 frequency = SDL_GetPerformanceFrequency(); 
     Uint64 lastCycleTime = SDL_GetPerformanceCounter();
+
+    globalConfig.running = true;
     while(globalConfig.running){
 
         Uint64 now = SDL_GetPerformanceCounter();
@@ -233,24 +235,23 @@ void emulateCycle(){
                     break;
 
                 case 0x0001: //Set VX to VX OR VY
-                    V[(opcode & 0X0F00) >> 8] = (V[(opcode & 0X0F00) >> 8] | V[(opcode & 0X00F0) >> 4]);
+                    V[(opcode & 0X0F00) >> 8] |= V[(opcode & 0X00F0) >> 4];
                     pc += 2;
                     break;
 
                 case 0x0002: //Set VX to VX AND VY
-                    V[(opcode & 0X0F00) >> 8] = (V[(opcode & 0X0F00) >> 8] & V[(opcode & 0X00F0) >> 4]);
+                    V[(opcode & 0X0F00) >> 8] &= V[(opcode & 0X00F0) >> 4];
                     pc += 2;
                     break;
 
                 case 0x0003: //Set VX to VX XOR VY
-                    V[(opcode & 0X0F00) >> 8] = (V[(opcode & 0X0F00) >> 8] ^ V[(opcode & 0X00F0) >> 4]);
+                    V[(opcode & 0X0F00) >> 8] ^= V[(opcode & 0X00F0) >> 4];
                     pc += 2;
                     break;
 
 
                 case 0x0004: //Add the value of register VY to register VX
                     {
-
                         unsigned int addition = 0;
                         addition = V[(opcode & 0X0F00) >> 8] + V[(opcode & 0X00F0) >> 4];
                         V[(opcode & 0X0F00) >> 8] = addition;
@@ -382,11 +383,11 @@ void emulateCycle(){
                     }else if(press == 0xF0){
                         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "An error happened while trying to get the SDL Keyboard state");
                     }else{
-                        V[(opcode & 0x0F00) >> 8] = waitForPress();
+                        V[(opcode & 0x0F00) >> 8] = press;
                     }
                     pc+= 2;
                 }
-                    break;
+                break;
 
                 case 0x0015://Set the delay timer to the value of register VX
                     delay_timer = V[(opcode & 0X0F00) >> 8]; 
@@ -486,6 +487,7 @@ int clearScreen(){
             gpx[x * y] = 0;
         }
     }
+
     SDL_FRect screen = {0, 0, SCREEN_WIDTH * 25, SCREEN_HEIGHT * 25};
     SDL_SetRenderDrawColor(globalConfig.renderer, 0, 0, 0, 255);
     SDL_RenderFillRect(globalConfig.renderer, &screen);

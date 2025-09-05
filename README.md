@@ -9,7 +9,6 @@ To delete the project and the obj files:
 ```cmd
 make clean 
 ```
-
 To rebuild the project:  
 
 ```cmd

@@ -12,6 +12,7 @@
 typedef struct{
     bool debugOutput;
     bool running;
+    short scalingFactor;
     SDL_Window *window;
     SDL_Renderer *renderer;
 }Config;

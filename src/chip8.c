@@ -15,7 +15,6 @@
 #include "../include/functions.h"
 
 
-short scalingFactor = 25;
 //CHIP-8 specifications
 unsigned short opcode; //the operation code of the instruction
 unsigned char memory[MEMORY]; //the total memory of the chip-8
@@ -455,7 +454,7 @@ int drawSprite(unsigned char x, unsigned char y, unsigned char nBytes, SDL_Windo
         //unsigned char mask = 0;
         for(int i = 7; i >= 0; i++){
             if((memory[I + row] >> i) & 0x01){
-                SDL_FRect rect = {x, y, 25, 25};
+                SDL_FRect rect = {x, y, globalConfig.scalingFactor, globalConfig.scalingFactor};
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
                 SDL_RenderFillRect(renderer, &rect);
             }else{
@@ -488,7 +487,7 @@ int clearScreen(){
         }
     }
 
-    SDL_FRect screen = {0, 0, SCREEN_WIDTH * 25, SCREEN_HEIGHT * 25};
+    SDL_FRect screen = {0, 0, SCREEN_WIDTH * globalConfig.scalingFactor, SCREEN_HEIGHT * globalConfig.scalingFactor};
     SDL_SetRenderDrawColor(globalConfig.renderer, 0, 0, 0, 255);
     SDL_RenderFillRect(globalConfig.renderer, &screen);
     SDL_RenderPresent(globalConfig.renderer);

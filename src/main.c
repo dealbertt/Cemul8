@@ -13,7 +13,7 @@
 
 extern char fileName[20];
 
-Config globalConfig = {.debugOutput = false, .running = false};
+Config globalConfig = {.debugOutput = false, .running = false, .scalingFactor = 25};
 
 void quit(int signum);
 
@@ -40,17 +40,19 @@ int main(int argc, char **argv){
         SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error trying to initialize SDL: %s\n", SDL_GetError());
         return -1;
     }
-    if(!SDL_CreateWindowAndRenderer("emul8", SCREEN_WIDTH * 25, SCREEN_HEIGHT * 25, SDL_WINDOW_RESIZABLE, &globalConfig.window, &globalConfig.renderer)){
+    if(!SDL_CreateWindowAndRenderer("emul8", SCREEN_WIDTH * scaling, SCREEN_HEIGHT * 25, SDL_WINDOW_RESIZABLE, &globalConfig.window, &globalConfig.renderer)){
         SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error on SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
         return -1;
     }
+    /*
     SDL_RenderPresent(globalConfig.renderer);
     updateScreen();
     SDL_Delay(1000);
     clearScreen();
     SDL_Delay(1000);
-    //loadProgram(fileName);
-    //simulateCpu();
+    */
+    loadProgram(fileName);
+    simulateCpu();
 
     SDL_Quit();
     return 0;

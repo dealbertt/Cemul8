@@ -14,14 +14,14 @@ Config *readConfiguration(const char *path){
     char line[100];
     while(fgets(line, sizeof(line), ptr)){
         if(line[0] == '#' || strlen(line) < 3) continue; 
-        if(strstr(line, "NUMBER_ELEMENTS")) sscanf(line, "NUMBER_ELEMENTS=%d", &config->debugOutput);
-        else if(strstr(line, "SCALING_FACTOR")) sscanf(line, "SCALING_FACTOR=%d", &config->scalingFactor);
+        if(strstr(line, "NUMBER_ELEMENTS")) sscanf(line, "NUMBER_ELEMENTS=%d", (int *)&config->debugOutput);
+        else if(strstr(line, "SCALING_FACTOR")) sscanf(line, "SCALING_FACTOR=%hu", &config->scalingFactor);
     }
     fclose(ptr);
     //std::cout << "Number of elements: " << config->numberElements << "\n";
-    SDL_LogInfo(SDL_LOG_PRIORITY_INFO, "Number of elements: %d\n", config->numberElements);
+    SDL_LogInfo(SDL_LOG_PRIORITY_INFO, "Debug output: %d\n", config->debugOutput);
     //std::cout << "Window Width: " << config->windowWidth << "\n";
-    SDL_LogInfo(SDL_LOG_PRIORITY_INFO, "Window Width: %d\n", config->windowWidth);
+    SDL_LogInfo(SDL_LOG_PRIORITY_INFO, "Scaling factor: %d\n", config->scalingFactor);
 
     return config;
 }

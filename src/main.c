@@ -14,7 +14,7 @@
 
 Config globalConfig = {.debugOutput = false,  .scalingFactor = 25};
 
-emulObjects objects = {.running = false, .window = NULL, .renderer = NULL, .filename = NULL};
+emulObjects objects = {.running = false, .window = NULL, .renderer = NULL};
 
 
 void quit(int signum);

@@ -13,6 +13,7 @@
 
 #include "../include/chip8.h"
 #include "../include/functions.h"
+#include "../include/config.h"
 
 
 //CHIP-8 specifications
@@ -65,8 +66,8 @@ unsigned char chip8_fontset[80] =
 //0x200-0xFFF - Program ROM and work RAM
 
 
+extern emulObjects objects;
 extern Config globalConfig;
-extern char fileName[20];
 
 void initialize(){
     initializeMemory();
@@ -130,8 +131,8 @@ void simulateCpu(){
     Uint64 frequency = SDL_GetPerformanceFrequency(); 
     Uint64 lastCycleTime = SDL_GetPerformanceCounter();
 
-    globalConfig.running = true;
-    while(globalConfig.running){
+    objects.running = true;
+    while(objects.running){
 
         Uint64 now = SDL_GetPerformanceCounter();
         double elapsedTime = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
@@ -470,12 +471,12 @@ int updateScreen(){
         for(int j = 0; j < SCREEN_HEIGHT; j++){
             if(!gpx[i * j]){
                 //The reason it says scalated is because the screen is 25 x the original resolution, otherwise it would be way too small
-                drawScalatedPixel(i, j, globalConfig.renderer);
+                drawScalatedPixel(i, j, objects.renderer);
             }
         }
     }
     //Update the screen once all the pixels (SDL_FRect) have been set
-    SDL_RenderPresent(globalConfig.renderer);
+    SDL_RenderPresent(objects.renderer);
     return 0;
 }
 
@@ -488,8 +489,8 @@ int clearScreen(){
     }
 
     SDL_FRect screen = {0, 0, SCREEN_WIDTH * globalConfig.scalingFactor, SCREEN_HEIGHT * globalConfig.scalingFactor};
-    SDL_SetRenderDrawColor(globalConfig.renderer, 0, 0, 0, 255);
-    SDL_RenderFillRect(globalConfig.renderer, &screen);
-    SDL_RenderPresent(globalConfig.renderer);
+    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
+    SDL_RenderFillRect(objects.renderer, &screen);
+    SDL_RenderPresent(objects.renderer);
     return 0;
 }

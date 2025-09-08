@@ -10,12 +10,11 @@
 #include <SDL3/SDL.h>
 
 typedef struct{
-    bool debugOutput;
     bool running;
-    short scalingFactor;
     SDL_Window *window;
     SDL_Renderer *renderer;
-}Config;
+    char filename[20];
+}emulObjects;
 
 void initialize();
 

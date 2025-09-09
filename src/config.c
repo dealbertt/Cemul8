@@ -14,7 +14,7 @@ Config *readConfiguration(const char *path){
     char line[100];
     while(fgets(line, sizeof(line), ptr)){
         if(line[0] == '#' || strlen(line) < 3) continue; 
-        if(strstr(line, "NUMBER_ELEMENTS")) sscanf(line, "NUMBER_ELEMENTS=%d", (int *)&config->debugOutput);
+        if(strstr(line, "DEBUG_OUTPUT")) sscanf(line, "DEBUG_OUTPUT=%d", (int *)&config->debugOutput);
         else if(strstr(line, "SCALING_FACTOR")) sscanf(line, "SCALING_FACTOR=%hu", &config->scalingFactor);
     }
     fclose(ptr);

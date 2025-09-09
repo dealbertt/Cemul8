@@ -12,7 +12,7 @@
 #include "../include/functions.h"
 #include "../include/config.h"
 
-Config globalConfig = {.debugOutput = false,  .scalingFactor = 25};
+Config *globalConfig;
 
 emulObjects objects = {.running = false, .window = NULL, .renderer = NULL};
 
@@ -25,10 +25,11 @@ int main(int argc, char **argv){
     signal(SIGKILL, quit);
     signal(SIGINT, quit);
 
+    globalConfig = readConfiguration("config/config.txt");
     for(int i = 0; i < argc; i++){
         if(strcmp(argv[i], "-DEBUG_OUTPUT") == 0){
             printf("Verbose output enabled\n");
-            globalConfig.debugOutput = true;
+            globalConfig->debugOutput = true;
         }
     }
     if(argc > 1){
@@ -42,7 +43,7 @@ int main(int argc, char **argv){
         SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error trying to initialize SDL: %s\n", SDL_GetError());
         return -1;
     }
-    if(!SDL_CreateWindowAndRenderer("emul8", SCREEN_WIDTH * globalConfig.scalingFactor, SCREEN_HEIGHT * 25, SDL_WINDOW_RESIZABLE, &objects.window, &objects.renderer)){
+    if(!SDL_CreateWindowAndRenderer("emul8", SCREEN_WIDTH * globalConfig->scalingFactor, SCREEN_HEIGHT * globalConfig->scalingFactor, SDL_WINDOW_RESIZABLE, &objects.window, &objects.renderer)){
         SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error on SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
         return -1;
     }

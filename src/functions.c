@@ -15,6 +15,7 @@
 
 char fileName[20];
 extern unsigned char memory[4096]; //the total memory of the chip-8
+extern Config *globalConfig;
 
 int setFileName(const char *argName){
     if(strstr(argName, ".ch8") == NULL && strstr(argName, ".c8") == NULL){
@@ -117,7 +118,7 @@ unsigned char generateRandomNN(int mask){
 }
 
 int drawScalatedPixel(int x, int y, SDL_Renderer *renderer){
-    SDL_FRect drawRect = {x * 25, y * 25, 25, 25};
+    SDL_FRect drawRect = {x * globalConfig->scalingFactor, y * globalConfig->scalingFactor, globalConfig->scalingFactor, globalConfig->scalingFactor};
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); //All white
     SDL_RenderFillRect(renderer , &drawRect); 
     return 0;

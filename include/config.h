@@ -7,4 +7,6 @@ typedef struct{
     short scalingFactor;
 }Config;
 
+Config *readConfiguration(const char *path);
+
 #endif //CONFIG_H

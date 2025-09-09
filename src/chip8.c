@@ -67,7 +67,7 @@ unsigned char chip8_fontset[80] =
 
 
 extern emulObjects objects;
-extern Config globalConfig;
+extern Config *globalConfig;
 
 void initialize(){
     initializeMemory();
@@ -455,7 +455,7 @@ int drawSprite(unsigned char x, unsigned char y, unsigned char nBytes, SDL_Windo
         //unsigned char mask = 0;
         for(int i = 7; i >= 0; i++){
             if((memory[I + row] >> i) & 0x01){
-                SDL_FRect rect = {x, y, globalConfig.scalingFactor, globalConfig.scalingFactor};
+                SDL_FRect rect = {x, y, globalConfig->scalingFactor, globalConfig->scalingFactor};
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
                 SDL_RenderFillRect(renderer, &rect);
             }else{
@@ -488,7 +488,7 @@ int clearScreen(){
         }
     }
 
-    SDL_FRect screen = {0, 0, SCREEN_WIDTH * globalConfig.scalingFactor, SCREEN_HEIGHT * globalConfig.scalingFactor};
+    SDL_FRect screen = {0, 0, SCREEN_WIDTH * globalConfig->scalingFactor, SCREEN_HEIGHT * globalConfig->scalingFactor};
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
     SDL_RenderFillRect(objects.renderer, &screen);
     SDL_RenderPresent(objects.renderer);

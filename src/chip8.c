@@ -409,9 +409,9 @@ unsigned short decode(){
                 case 0x0029://Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
                     {
                         unsigned char hexValue = V[(opcode & 0x0F00) >> 8];
-                        pc+= 2;
-                        I = memory[hexValue * 5]; //kind of
+                        I = hexValue * 5; //Has to point to the address, not to the content of the address
                         SDL_Log("Hex value of FX29 instruction: %d\n", hexValue);
+                        pc+= 2;
                     }
                     break;
 

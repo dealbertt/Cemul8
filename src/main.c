@@ -14,8 +14,7 @@
 
 /*
  TODO:
- Missing intrusction to implement:
- - FX29: Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX 
+ - Create Simulate/Test opcode function to test each individual opcode
 
  */
 

@@ -27,6 +27,7 @@ void emulateCycle();
 void simulateCpu();
 
 unsigned short fetchOpcode();
+unsigned short decode();
 
 int loadProgram(const char *fileName);
 
@@ -35,4 +36,6 @@ int drawSprite(unsigned char x, unsigned char y, unsigned char nBytes, SDL_Windo
 int updateScreen();
 
 int clearScreen();
+
+int simulateOpcode(unsigned short simOpcode);
 #endif

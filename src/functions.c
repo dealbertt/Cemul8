@@ -13,7 +13,7 @@
 #include "../include/functions.h"
 #include "../include/config.h"
 
-char fileName[20];
+extern char fileName[20];
 extern unsigned char memory[4096]; //the total memory of the chip-8
 extern Config *globalConfig;
 

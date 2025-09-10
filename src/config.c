@@ -19,9 +19,9 @@ Config *readConfiguration(const char *path){
     }
     fclose(ptr);
     //std::cout << "Number of elements: " << config->numberElements << "\n";
-    SDL_LogInfo(SDL_LOG_PRIORITY_INFO, "Debug output: %d\n", config->debugOutput);
+    SDL_Log("Debug output: %d\n", config->debugOutput);
     //std::cout << "Window Width: " << config->windowWidth << "\n";
-    SDL_LogInfo(SDL_LOG_PRIORITY_INFO, "Scaling factor: %d\n", config->scalingFactor);
+    SDL_Log("Scaling factor: %d\n", config->scalingFactor);
 
     return config;
 }

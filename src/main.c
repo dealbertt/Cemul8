@@ -1,4 +1,4 @@
-#include <SDL3/SDL_timer.h>
+#include <SDL3/SDL_log.h>
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
@@ -12,8 +12,16 @@
 #include "../include/functions.h"
 #include "../include/config.h"
 
+/*
+ TODO:
+ Missing intrusction to implement:
+ - FX29: Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX 
+
+ */
+
 Config *globalConfig;
 
+char fileName[20];
 emulObjects objects = {.running = false, .window = NULL, .renderer = NULL};
 
 
@@ -35,7 +43,7 @@ int main(int argc, char **argv){
     if(argc > 1){
         setFileName(argv[1]);
     }else{
-
+        SDL_LogError(SDL_LOG_PRIORITY_ERROR, "No program has been provided for the emulator:");
         return -1;
     }
 
@@ -43,10 +51,14 @@ int main(int argc, char **argv){
         SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error trying to initialize SDL: %s\n", SDL_GetError());
         return -1;
     }
+
     if(!SDL_CreateWindowAndRenderer("emul8", SCREEN_WIDTH * globalConfig->scalingFactor, SCREEN_HEIGHT * globalConfig->scalingFactor, SDL_WINDOW_RESIZABLE, &objects.window, &objects.renderer)){
         SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error on SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
         return -1;
     }
+    
+
+    //Snippet to test the screen
     /*
     SDL_RenderPresent(globalConfig.renderer);
     updateScreen();
@@ -54,7 +66,9 @@ int main(int argc, char **argv){
     clearScreen();
     SDL_Delay(1000);
     */
-    loadProgram(objects.filename);
+    initialize();
+    loadProgram(fileName);
+    SDL_Delay(1000);
     simulateCpu();
 
     SDL_Quit();

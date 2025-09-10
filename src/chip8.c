@@ -158,8 +158,11 @@ unsigned short fetchOpcode(){
 void emulateCycle(){
     //FETCH
     opcode = fetchOpcode();
-    printf("Opcode: 0x%d\n", opcode);
+    printf("Opcode: 0x%u\n", opcode);
+    decode();
+}
 
+unsigned short decode(){
     //DECODE
     switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 
         case 0x0000:
@@ -261,7 +264,6 @@ void emulateCycle(){
                             V[15] = 0x00; 
                         }
                         pc += 2;
-
                     }
                     break;
 
@@ -405,7 +407,12 @@ void emulateCycle(){
                     break;
 
                 case 0x0029://Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
-                    pc+= 2;
+                    {
+                        unsigned char hexValue = V[(opcode & 0x0F00) >> 8];
+                        pc+= 2;
+                        I = memory[hexValue * 5]; //kind of
+                        SDL_Log("Hex value of FX29 instruction: %d\n", hexValue);
+                    }
                     break;
 
                 case 0x0033://Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
@@ -447,6 +454,7 @@ void emulateCycle(){
             sound_timer--;
         }
     }
+    return 0;
 }
 
 //Because this function needs to work with memory and the Index register, is going to be placed at the chip8.c file for the moment
@@ -492,5 +500,11 @@ int clearScreen(){
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
     SDL_RenderFillRect(objects.renderer, &screen);
     SDL_RenderPresent(objects.renderer);
+    return 0;
+}
+
+int simulateOpcode(unsigned short simOpcode){
+    opcode = simOpcode;
+    decode();
     return 0;
 }

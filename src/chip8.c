@@ -88,6 +88,7 @@ void initializeMemory(){
         stack[i] = 0;
     }
     pc = 0x200; //After the part of the memory that has the fontset loaded
+    SDL_Log("PC: 0x%04X\n", pc);
 }
 
 void initRegisters(){
@@ -130,19 +131,38 @@ int loadProgram(const char *fileName){
 void simulateCpu(){
     Uint64 frequency = SDL_GetPerformanceFrequency(); 
     Uint64 lastCycleTime = SDL_GetPerformanceCounter();
+    Uint64 lastTimerTick = SDL_GetPerformanceCounter();
+
+    const double cpuCycleMs = 2.0;         // CPU cycle every 2 ms
+    const double timerIntervalMs = 1000.0 / 60.0; // 60 Hz timer -> ~16.67 ms
+
 
     objects.running = true;
     while(objects.running){
 
         Uint64 now = SDL_GetPerformanceCounter();
-        double elapsedTime = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
+        double elapsedCycle = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
+        double elapsedTimer = ((double)(now - lastTimerTick) / (double)frequency) * 1000.0;
 
-        if(elapsedTime >= 2){
+        if(elapsedCycle >= cpuCycleMs){
             emulateCycle();
+            printf("Cycle\n");
             lastCycleTime = now;
         }else{
             SDL_Delay(1);
         }
+
+        if(elapsedTimer >= timerIntervalMs) {
+            if(delay_timer > 0) delay_timer--;
+            if(sound_timer > 0) {
+                sound_timer--;
+                if(sound_timer == 0) {
+                    printf("Beep!\n"); // Or trigger actual sound
+                }
+            }
+            lastTimerTick = now;
+        }
+
         if(drawFlag){
             updateScreen();
         }
@@ -152,17 +172,19 @@ void simulateCpu(){
 }
 
 unsigned short fetchOpcode(){
+    SDL_Log("Memory[pc]: %04X\n", memory[pc]);
+    SDL_Log("Memory[pc + 1]: %04X\n", memory[pc + 1]);
     return memory[pc] << 8 | memory[pc + 1];
 }
 
 void emulateCycle(){
     //FETCH
     opcode = fetchOpcode();
-    printf("Opcode: 0x%u\n", opcode);
     decode();
 }
 
-unsigned short decode(){
+void decode(){
+    printf("Opcode: %04X\n", opcode);
     //DECODE
     switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 
         case 0x0000:
@@ -269,7 +291,6 @@ unsigned short decode(){
 
                 case 0x0005: //Subtract the value of register VY from register VX
                     {
-
                         int substraction = V[(opcode & 0X0F00) >> 8] - V[(opcode & 0X00F0) >> 4];
                         V[(opcode & 0X0F00) >> 8] = substraction;
                         if(substraction < 0){
@@ -321,6 +342,7 @@ unsigned short decode(){
 
         case 0xC000://Set VX Random number with a mask of NN
             generateRandomNN(opcode & 0x00FF);
+            pc += 2;
             break;
 
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
@@ -440,7 +462,7 @@ unsigned short decode(){
             }
             break;
         default:
-            printf("Unkonwn opcode: 0x%X\n", opcode);
+            printf("Unkonwn opcode: 0x%04X\n", opcode);
             pc += 2;
     } 
 
@@ -454,7 +476,6 @@ unsigned short decode(){
             sound_timer--;
         }
     }
-    return 0;
 }
 
 //Because this function needs to work with memory and the Index register, is going to be placed at the chip8.c file for the moment
@@ -485,6 +506,7 @@ int updateScreen(){
     }
     //Update the screen once all the pixels (SDL_FRect) have been set
     SDL_RenderPresent(objects.renderer);
+    drawFlag = false;
     return 0;
 }
 

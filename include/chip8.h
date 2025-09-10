@@ -27,7 +27,7 @@ void emulateCycle();
 void simulateCpu();
 
 unsigned short fetchOpcode();
-unsigned short decode();
+void decode();
 
 int loadProgram(const char *fileName);
 

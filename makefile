@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Werror -Iinclude $(shell pkg-config --cflags sdl3)
+CFLAGS = -Wall -Werror -g -Iinclude $(shell pkg-config --cflags sdl3)
 LDFLAGS = $(shell pkg-config --libs sdl3)
 
 

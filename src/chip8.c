@@ -125,6 +125,8 @@ int loadProgram(const char *fileName){
 
     fclose(ptr);
     printf("Program loaded in memory successfully!\n");
+    printf("First few bytes of program: %02X %02X %02X %02X\n",
+       memory[0x200], memory[0x201], memory[0x202], memory[0x203]);
     return 0;
 }
 
@@ -204,6 +206,7 @@ void decode(){
                     //pc += 2;
                     break;
             }
+            break;
         case 0x1000: //jump to the address NNN
             pc = opcode & 0x0FFF;
             break;
@@ -466,16 +469,6 @@ void decode(){
             pc += 2;
     } 
 
-    if(delay_timer > 0){
-        delay_timer--;
-    }
-
-    if(sound_timer > 0){
-        if(sound_timer == 1){
-            printf("Beep Time!\n");
-            sound_timer--;
-        }
-    }
 }
 
 //Because this function needs to work with memory and the Index register, is going to be placed at the chip8.c file for the moment
@@ -518,10 +511,7 @@ int clearScreen(){
         }
     }
 
-    SDL_FRect screen = {0, 0, SCREEN_WIDTH * globalConfig->scalingFactor, SCREEN_HEIGHT * globalConfig->scalingFactor};
-    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
-    SDL_RenderFillRect(objects.renderer, &screen);
-    SDL_RenderPresent(objects.renderer);
+    drawFlag = true;
     return 0;
 }
 

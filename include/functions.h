@@ -4,7 +4,6 @@
 
 #include <SDL3/SDL_render.h>
 
-int setFileName(const char *argName);
 
 int handleRealKeyboard();
 unsigned char handleKeyPad();

@@ -9,7 +9,6 @@
 #include <SDL3/SDL_video.h>
 
 #include "../include/chip8.h"
-#include "../include/functions.h"
 #include "../include/config.h"
 
 /*
@@ -25,6 +24,7 @@ emulObjects objects = {.running = false, .window = NULL, .renderer = NULL};
 
 
 void quit(int signum);
+int setFileName(const char *argName);
 
 int main(int argc, char **argv){
     signal(SIGTERM, quit);
@@ -66,7 +66,7 @@ int main(int argc, char **argv){
     SDL_Delay(1000);
     */
     initialize();
-    loadProgram(fileName);
+    loadProgram(objects.filename);
     SDL_Delay(1000);
     simulateCpu();
 
@@ -77,4 +77,15 @@ int main(int argc, char **argv){
 void quit(int signum){
     (void)signum;
     exit(-1);
+}
+
+int setFileName(const char *argName){
+    if(strstr(argName, ".ch8") == NULL && strstr(argName, ".c8") == NULL){
+        printf("Please select a file with the extension .ch8 or .c8\n");
+        return -1;
+    }
+
+    strcpy(objects.filename, argName);
+    printf("FileName: %s\n", objects.filename);
+    return 0;
 }

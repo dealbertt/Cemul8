@@ -124,9 +124,8 @@ int loadProgram(const char *fileName){
     }
 
     fclose(ptr);
-    printf("Program loaded in memory successfully!\n");
-    printf("First few bytes of program: %02X %02X %02X %02X\n",
-       memory[0x200], memory[0x201], memory[0x202], memory[0x203]);
+    SDL_Log("Program loaded in memory successfully!\n");
+    SDL_Log("First few bytes of program: %02X %02X %02X %02X\n", memory[0x200], memory[0x201], memory[0x202], memory[0x203]);
     return 0;
 }
 
@@ -148,7 +147,6 @@ void simulateCpu(){
 
         if(elapsedCycle >= cpuCycleMs){
             emulateCycle();
-            printf("Cycle\n");
             lastCycleTime = now;
         }else{
             SDL_Delay(1);
@@ -174,8 +172,6 @@ void simulateCpu(){
 }
 
 unsigned short fetchOpcode(){
-    SDL_Log("Memory[pc]: %04X\n", memory[pc]);
-    SDL_Log("Memory[pc + 1]: %04X\n", memory[pc + 1]);
     return memory[pc] << 8 | memory[pc + 1];
 }
 
@@ -186,7 +182,7 @@ void emulateCycle(){
 }
 
 void decode(){
-    printf("Opcode: %04X\n", opcode);
+    //printf("Opcode: %04X\n", opcode);
     //DECODE
     switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 
         case 0x0000:
@@ -505,9 +501,9 @@ int updateScreen(){
 
 
 int clearScreen(){
-    for(int x = 0; x < SCREEN_WIDTH; x++){
-        for(int y = 0; y < SCREEN_HEIGHT; y++){
-            gpx[x * y] = 0;
+    for(int y = 0; y < SCREEN_HEIGHT; y++){
+        for(int x = 0; x < SCREEN_WIDTH; x++){
+            gpx[y * x] = 0;
         }
     }
 

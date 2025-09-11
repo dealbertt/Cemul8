@@ -17,16 +17,6 @@ extern char fileName[20];
 extern unsigned char memory[4096]; //the total memory of the chip-8
 extern Config *globalConfig;
 
-int setFileName(const char *argName){
-    if(strstr(argName, ".ch8") == NULL && strstr(argName, ".c8") == NULL){
-        printf("Please select a file with the extension .ch8 or .c8\n");
-        return -1;
-    }
-
-    strcpy(fileName, argName);
-    printf("FileName: %s\n", fileName);
-    return 0;
-}
 
 int handleRealKeyboard(){
     SDL_Event event;

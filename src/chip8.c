@@ -186,7 +186,7 @@ void emulateCycle(){
 }
 
 void decode(){
-    printf("Opcode: %04X\n", opcode);
+    //printf("Opcode: %04X\n", opcode);
     //DECODE
     switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 
         case 0x0000:
@@ -343,7 +343,7 @@ void decode(){
             break;
 
         case 0xC000://Set VX Random number with a mask of NN
-            generateRandomNN(opcode & 0x00FF);
+            V[(opcode & 0x0F00) >> 8] = generateRandomNN(opcode & 0x00FF);
             pc += 2;
             break;
 
@@ -354,7 +354,6 @@ void decode(){
                 unsigned short height = opcode & 0x000F;
                 unsigned short pixel;
 
-                SDL_Log("Painting pixel at X: %d and Y: %d with Height: %d\n", x, y, height);
                 
                 V[0xF] = 0;
                 for (int yline = 0; yline < height; yline++)

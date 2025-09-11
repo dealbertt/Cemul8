@@ -1,13 +1,11 @@
-#include <SDL3/SDL_render.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_render.h>
 #include <SDL3/SDL_log.h>
 
 #include "../include/functions.h"
@@ -107,9 +105,9 @@ unsigned char generateRandomNN(int mask){
     return randomNumber & mask;
 }
 
-int drawScalatedPixel(int x, int y, SDL_Renderer *renderer){
+int drawScalatedPixel(int x, int y, SDL_Renderer *renderer, SDL_Color color){
     SDL_FRect drawRect = {x * globalConfig->scalingFactor, y * globalConfig->scalingFactor, globalConfig->scalingFactor, globalConfig->scalingFactor};
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); //All white
+    SDL_SetRenderDrawColor(renderer, color.r ,color.g, color.b, color.a); //All white
     SDL_RenderFillRect(renderer , &drawRect); 
     return 0;
 }

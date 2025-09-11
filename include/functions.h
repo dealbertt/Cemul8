@@ -2,6 +2,7 @@
 #define FUNCTIONS_H
 
 
+#include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_render.h>
 
 
@@ -14,6 +15,6 @@ unsigned char checkHexValue();
  
 unsigned char generateRandomNN(int mask);
 
-int drawScalatedPixel(int x, int y, SDL_Renderer *renderer);
+int drawScalatedPixel(int x, int y, SDL_Renderer *renderer, SDL_Color color);
 
 #endif

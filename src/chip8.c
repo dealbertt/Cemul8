@@ -25,7 +25,7 @@ unsigned short I; //special register I for memory addresses
 unsigned short pc; //Program counter
 
 
-unsigned char gpx[SCREEN_WIDTH * SCREEN_WIDTH]; //pixels of the screen. Total pixels in the array: 2048
+unsigned char gpx[SCREEN_WIDTH * SCREEN_HEIGHT]; //pixels of the screen. Total pixels in the array: 2048
                                                 //Keep in mind that this are the screens of the CHIP-8, but not of the actual screen that is showed, that is because the original resolution is way too small
 
 unsigned char delay_timer;
@@ -86,6 +86,10 @@ void initializeMemory(){
 
     for(int i = 0; i < 16; i++){
         stack[i] = 0;
+    }
+
+    for(int i = 0; i < (SCREEN_WIDTH * SCREEN_HEIGHT); i++){
+        gpx[i] = 0x0;
     }
     pc = 0x200; //After the part of the memory that has the fontset loaded
     SDL_Log("PC: 0x%04X\n", pc);
@@ -182,7 +186,7 @@ void emulateCycle(){
 }
 
 void decode(){
-    //printf("Opcode: %04X\n", opcode);
+    printf("Opcode: %04X\n", opcode);
     //DECODE
     switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 
         case 0x0000:
@@ -232,7 +236,6 @@ void decode(){
                 pc += 2;
             }
             break;
-
         case 0x5000:
             if(V[(opcode & 0x0F00) >> 8] == V[(opcode & 0x00F0) >> 4]){
                 pc += 4;
@@ -351,6 +354,8 @@ void decode(){
                 unsigned short height = opcode & 0x000F;
                 unsigned short pixel;
 
+                SDL_Log("Painting pixel at X: %d and Y: %d with Height: %d\n", x, y, height);
+                
                 V[0xF] = 0;
                 for (int yline = 0; yline < height; yline++)
                 {
@@ -369,7 +374,6 @@ void decode(){
                 drawFlag = true;
                 pc += 2;
             }
-            //drawSprite(V[(opcode & 0x0F00) >> 8], V[(opcode & 0x00F0) >> 4], opcode & 0x000F, globalConfig.window, globalConfig.renderer);
             break;
         case 0xE000: 
             switch (opcode & 0x000F) {
@@ -467,29 +471,15 @@ void decode(){
 
 }
 
-//Because this function needs to work with memory and the Index register, is going to be placed at the chip8.c file for the moment
-int drawSprite(unsigned char x, unsigned char y, unsigned char nBytes, SDL_Window *window, SDL_Renderer *renderer){
-    for(int row = 0; row  < nBytes; row++){
-        //unsigned char mask = 0;
-        for(int i = 7; i >= 0; i++){
-            if((memory[I + row] >> i) & 0x01){
-                SDL_FRect rect = {x, y, globalConfig->scalingFactor, globalConfig->scalingFactor};
-                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                SDL_RenderFillRect(renderer, &rect);
-            }else{
-                printf("Do not paint pixel!\n");
-            }
-        }
-    }  
-    return 0;
-}
-
 int updateScreen(){
-    for(int i = 0; i < SCREEN_WIDTH; i++){
-        for(int j = 0; j < SCREEN_HEIGHT; j++){
-            if(!gpx[i * j]){
-                //The reason it says scalated is because the screen is 25 x the original resolution, otherwise it would be way too small
-                drawScalatedPixel(i, j, objects.renderer);
+    for(int x = 0; x < SCREEN_WIDTH; x++){
+        for(int y = 0; y < SCREEN_HEIGHT; y++){
+            if(gpx[x + (y * SCREEN_WIDTH)] == 1){
+                SDL_Color color = {255, 255, 255, 255};
+                drawScalatedPixel(x, y, objects.renderer, color);
+            }else{
+                SDL_Color color = {0, 0, 0, 255};
+                drawScalatedPixel(x, y, objects.renderer, color);
             }
         }
     }
@@ -503,10 +493,9 @@ int updateScreen(){
 int clearScreen(){
     for(int y = 0; y < SCREEN_HEIGHT; y++){
         for(int x = 0; x < SCREEN_WIDTH; x++){
-            gpx[y * x] = 0;
+            gpx[x + (y * 64)] = 0x0;
         }
     }
-
     drawFlag = true;
     return 0;
 }

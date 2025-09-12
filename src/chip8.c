@@ -92,7 +92,7 @@ void initializeMemory(){
         gpx[i] = 0x0;
     }
     pc = 0x200; //After the part of the memory that has the fontset loaded
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "PC: 0x%04X\n", pc);
+    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: PC: 0x%04X\n", pc);
 }
 
 void initRegisters(){
@@ -128,8 +128,8 @@ int loadProgram(const char *fileName){
     }
 
     fclose(ptr);
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Program loaded in memory successfully!\n");
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "First few bytes of program: %02X %02X %02X %02X\n", memory[0x200], memory[0x201], memory[0x202], memory[0x203]);
+    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Program loaded in memory successfully!\n");
+    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: First few bytes of program: %02X %02X %02X %02X\n", memory[0x200], memory[0x201], memory[0x202], memory[0x203]);
     return 0;
 }
 
@@ -186,7 +186,7 @@ void emulateCycle(){
 }
 
 void decode(){
-    //printf("Opcode: %04X\n", opcode);
+    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Opcode: %04X\n", opcode);
     //DECODE
     switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 
         case 0x0000:
@@ -201,7 +201,7 @@ void decode(){
                         sp--; //Because we increased when pushing onto the stack to point to the next free slot, we now decrease to retreive the value that was pushed
                         pc = stack[sp];
                     }else{
-                        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "The stack pointer is less than 0!\nCurrent value of sp: %d\n", sp);
+                        SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: The stack pointer is less than 0!\nCurrent value of sp: %d\n", sp);
                     }
                     //pc += 2;
                     break;
@@ -217,7 +217,7 @@ void decode(){
                 sp++; //avoid overwriting the current stack
                 pc = opcode & 0x0FFF;
             }else{
-                SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "The stack pointer is greater than 15!\nCurrent value of sp: %d\n", sp);
+                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: The stack pointer is greater than 15!\nCurrent value of sp: %d\n", sp);
             }
             break;
 
@@ -434,7 +434,7 @@ void decode(){
                     {
                         unsigned char hexValue = V[(opcode & 0x0F00) >> 8];
                         I = hexValue * 5; //Has to point to the address, not to the content of the address
-                        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Hex value of FX29 instruction: %d\n", hexValue);
+                        SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Hex value of FX29 instruction: %d\n", hexValue);
                         pc+= 2;
                     }
                     break;
@@ -443,7 +443,7 @@ void decode(){
                     memory[I] = V[(opcode & 0x0F00) >> 8] / 100;
                     memory[I + 1] = (V[(opcode & 0x0F00) >> 8] / 10) % 10;
                     memory[I + 2] = V[(opcode & 0x0F00) >> 8]  % 10;
-                    pc+= 2;
+                    pc += 2;
                     break;
 
                     case 0x0055: //Store the values of registers V0 to VX inclusive in memory starting at address I. I is set to I + X + 1 after operation²

@@ -1,3 +1,4 @@
+#include <SDL3/SDL_scancode.h>
 #include <stdlib.h>
 
 #include <SDL3/SDL.h>
@@ -27,7 +28,10 @@ int handleRealKeyboard(){
     }
 
     if(event.type == SDL_EVENT_KEY_DOWN){
-        returnKeyEquivalent(pressed);
+        //returnKeyEquivalent(pressed);
+        if(pressed[SDL_SCANCODE_ESCAPE]){
+            cleanup();
+        }
     }
     return 0;
 }
@@ -110,4 +114,9 @@ int drawScalatedPixel(int x, int y, SDL_Renderer *renderer, SDL_Color color){
     SDL_SetRenderDrawColor(renderer, color.r ,color.g, color.b, color.a); //All white
     SDL_RenderFillRect(renderer , &drawRect); 
     return 0;
+}
+void cleanup(){
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Quitting emul8...");
+    SDL_Quit();
+    exit(0);
 }

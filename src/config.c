@@ -18,8 +18,10 @@ Config *readConfiguration(const char *path){
         else if(strstr(line, "SCALING_FACTOR")) sscanf(line, "SCALING_FACTOR=%hu", &config->scalingFactor);
     }
     fclose(ptr);
-    if(config->debugOutput){
+    if(config->debugOutput == 1){
         SDL_SetLogPriorities(SDL_LOG_PRIORITY_DEBUG);
+    }else{
+        SDL_SetLogPriorities(SDL_LOG_PRIORITY_INFO);
     }
     //std::cout << "Number of elements: " << config->numberElements << "\n";
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Debug output: %d\n", config->debugOutput);

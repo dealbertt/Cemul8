@@ -17,4 +17,5 @@ unsigned char generateRandomNN(int mask);
 
 int drawScalatedPixel(int x, int y, SDL_Renderer *renderer, SDL_Color color);
 
+void cleanup();
 #endif

@@ -1,4 +1,3 @@
-#include <SDL3/SDL_log.h>
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>

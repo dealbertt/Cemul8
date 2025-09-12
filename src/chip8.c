@@ -150,6 +150,7 @@ void simulateCpu(){
         double elapsedTimer = ((double)(now - lastTimerTick) / (double)frequency) * 1000.0;
 
         if(elapsedCycle >= cpuCycleMs){
+            handleRealKeyboard();
             emulateCycle();
             lastCycleTime = now;
         }else{

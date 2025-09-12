@@ -92,7 +92,7 @@ void initializeMemory(){
         gpx[i] = 0x0;
     }
     pc = 0x200; //After the part of the memory that has the fontset loaded
-    SDL_Log("PC: 0x%04X\n", pc);
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "PC: 0x%04X\n", pc);
 }
 
 void initRegisters(){
@@ -105,7 +105,7 @@ void initRegisters(){
 int loadProgram(const char *fileName){
     FILE *ptr = fopen(fileName, "rb");
     if(ptr == NULL){
-        printf("Error while trying to open the loaded file!\n");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error while trying to open the loaded file!\n");
         return -1;
     }
     fseek(ptr, 0, SEEK_END); //Go to the end of the file
@@ -115,21 +115,21 @@ int loadProgram(const char *fileName){
     rewind(ptr); //Go back to the beggining of the file using rewind, first time i have ever heard of it
 
     if(fileSize > (MEMORY - 512)){
-        printf("Program selected is too big to load on the emulator!\nPlease select a smaller program\n");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Program selected is too big to load on the emulator!\nPlease select a smaller program\n");
         fclose(ptr);
         return -1;
     }
 
     size_t bytesRead = fread(&memory[512], 1, fileSize, ptr); //Return the total number of bytes read, which if everything goes fine, should be equal to the fileSize
     if(bytesRead != fileSize){
-        printf("Error trying to read the program\n");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to read the program\n");
         fclose(ptr);
         return -1;
     }
 
     fclose(ptr);
-    SDL_Log("Program loaded in memory successfully!\n");
-    SDL_Log("First few bytes of program: %02X %02X %02X %02X\n", memory[0x200], memory[0x201], memory[0x202], memory[0x203]);
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Program loaded in memory successfully!\n");
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "First few bytes of program: %02X %02X %02X %02X\n", memory[0x200], memory[0x201], memory[0x202], memory[0x203]);
     return 0;
 }
 
@@ -201,7 +201,7 @@ void decode(){
                         sp--; //Because we increased when pushing onto the stack to point to the next free slot, we now decrease to retreive the value that was pushed
                         pc = stack[sp];
                     }else{
-                        printf("The stack pointer is less than 0!\nCurrent value of sp: %d\n", sp);
+                        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "The stack pointer is less than 0!\nCurrent value of sp: %d\n", sp);
                     }
                     //pc += 2;
                     break;
@@ -217,7 +217,7 @@ void decode(){
                 sp++; //avoid overwriting the current stack
                 pc = opcode & 0x0FFF;
             }else{
-                printf("The stack pointer is greater than 15!\nCurrent value of sp: %d\n", sp);
+                SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "The stack pointer is greater than 15!\nCurrent value of sp: %d\n", sp);
             }
             break;
 
@@ -434,7 +434,7 @@ void decode(){
                     {
                         unsigned char hexValue = V[(opcode & 0x0F00) >> 8];
                         I = hexValue * 5; //Has to point to the address, not to the content of the address
-                        SDL_Log("Hex value of FX29 instruction: %d\n", hexValue);
+                        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Hex value of FX29 instruction: %d\n", hexValue);
                         pc+= 2;
                     }
                     break;
@@ -464,7 +464,7 @@ void decode(){
             }
             break;
         default:
-            printf("Unkonwn opcode: 0x%04X\n", opcode);
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
             pc += 2;
     } 
 

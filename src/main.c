@@ -67,7 +67,6 @@ int main(int argc, char **argv){
     */
     initialize();
     loadProgram(objects.filename);
-    SDL_Delay(1000);
     simulateCpu();
 
     SDL_Quit();

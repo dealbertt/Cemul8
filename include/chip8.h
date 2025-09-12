@@ -37,5 +37,4 @@ int updateScreen();
 
 int clearScreen();
 
-int simulateOpcode(unsigned short simOpcode);
 #endif

@@ -499,8 +499,3 @@ int clearScreen(){
     return 0;
 }
 
-int simulateOpcode(unsigned short simOpcode){
-    opcode = simOpcode;
-    decode();
-    return 0;
-}

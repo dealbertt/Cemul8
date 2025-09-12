@@ -35,7 +35,7 @@ int main(int argc, char **argv){
     globalConfig = readConfiguration("config/config.txt");
     for(int i = 0; i < argc; i++){
         if(strcmp(argv[i], "-DEBUG_OUTPUT") == 0){
-            printf("Verbose output enabled\n");
+            SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Verbose output enabled\n");
             globalConfig->debugOutput = true;
         }
     }

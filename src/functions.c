@@ -116,7 +116,7 @@ int drawScalatedPixel(int x, int y, SDL_Renderer *renderer, SDL_Color color){
     return 0;
 }
 void cleanup(){
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Quitting emul8...");
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Quitting emul8...\n");
     SDL_Quit();
     exit(0);
 }

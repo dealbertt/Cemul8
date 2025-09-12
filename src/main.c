@@ -9,10 +9,11 @@
 
 #include "../include/chip8.h"
 #include "../include/config.h"
+#include "../include/functions.h"
 
 /*
  TODO:
- - Create Simulate/Test opcode function to test each individual opcode
+ - Finish implementing/polishing the keyboard on the emulator. You have to integrate the real keyboard with the chip8 keypad, also make sure that the array called keyPad is modified according to the keys that are pressed, (1 if pressed and 0 if not, idk smth like that :))
 
  */
 
@@ -73,8 +74,7 @@ int main(int argc, char **argv){
 }
 
 void quit(int signum){
-    (void)signum;
-    exit(-1);
+    cleanup();
 }
 
 int setFileName(const char *argName){

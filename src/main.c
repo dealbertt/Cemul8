@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
-#include <stdlib.h>
 
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_render.h>
@@ -19,7 +18,6 @@
 
 Config *globalConfig;
 
-char fileName[20];
 emulObjects objects = {.running = false, .window = NULL, .renderer = NULL};
 
 
@@ -67,6 +65,7 @@ int main(int argc, char **argv){
     */
     initialize();
     loadProgram(objects.filename);
+    SDL_Delay(1000);
     simulateCpu();
 
     SDL_Quit();

@@ -1,3 +1,4 @@
+#include <iso646.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -75,17 +76,20 @@ void initialize(){
 }
 
 void initializeMemory(){
-    opcode = 0;
+    opcode = 0x0;
+    delay_timer = 0x0;
+    sound_timer = 0x0;
+
     for(int i = 0; i < 80; i++){
         memory[i] = chip8_fontset[i];
     }
 
     for(int i = 80; i < MEMORY; i++){
-        memory[i] = 0x00;
+        memory[i] = 0x0;
     }
 
     for(int i = 0; i < 16; i++){
-        stack[i] = 0;
+        stack[i] = 0x0;
     }
 
     for(int i = 0; i < (SCREEN_WIDTH * SCREEN_HEIGHT); i++){
@@ -150,7 +154,7 @@ void simulateCpu(){
         double elapsedTimer = ((double)(now - lastTimerTick) / (double)frequency) * 1000.0;
 
         if(elapsedCycle >= cpuCycleMs){
-            handleRealKeyboard();
+            //handleRealKeyboard();
             emulateCycle();
             lastCycleTime = now;
         }else{
@@ -224,6 +228,8 @@ void decode(){
 
         case 0x3000:
             if(V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF)){
+                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Value being compared to VX: %04X\n", opcode & 0x00FF);
+                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "VX: %04X\n", V[(opcode & 0x00FF) >> 8]);
                 pc += 4;
             }else{
                 pc += 2;
@@ -397,21 +403,16 @@ void decode(){
 
         case 0xF000:
             switch (opcode & 0x00FF){
-                case 0x0007://Store the current value of the delay timer in register VX
-                    V[(opcode & 0X0F00) >> 8] = delay_timer;
+                case 0x0007://Store the current value of the  delay timer in register VX
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Value of delay timer: %04X\n", delay_timer);
+                    V[(opcode & 0x0F00) >> 8] = delay_timer; 
                     pc+= 2;
                     break;
 
                 case 0x000A://Wait for a keypress and store the result in register VX
                 {
-                    unsigned char press = waitForPress();
-                    if(press == 0xFF){
-                        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Wrong key pressed, not included in the chip-8 keypad");
-                    }else if(press == 0xF0){
-                        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "An error happened while trying to get the SDL Keyboard state");
-                    }else{
-                        V[(opcode & 0x0F00) >> 8] = press;
-                    }
+                    unsigned char x = (opcode & 0x0F00) >> 8;
+                    waitForPress(x);
                     pc+= 2;
                 }
                 break;
@@ -500,3 +501,79 @@ int clearScreen(){
     return 0;
 }
 
+
+unsigned char handleKeyPad(){
+    SDL_Event event;
+    SDL_PollEvent(&event);
+
+    //const bool *pressed = SDL_GetKeyboardState(NULL);
+    if(event.type == SDL_EVENT_QUIT){
+        SDL_Quit();
+        return 0xF0;
+    }
+
+    if(event.type == SDL_EVENT_KEY_DOWN){
+        int keyIndex = 0;
+        if(keyIndex != -1){
+            keyPad[keyIndex] = 1;
+        }
+    }
+    return 0;
+}
+int waitForPress(unsigned char x) {
+    bool notPressed = true;
+    SDL_Event event;
+    while(notPressed){
+        while(SDL_PollEvent(&event)){
+            if(event.type == SDL_EVENT_KEY_DOWN){
+                const bool *pressed = SDL_GetKeyboardState(NULL);
+                int keyIndex = returnKeyPadIndex(pressed);
+                 if (keyIndex != -1) {
+                    keyPad[keyIndex] = 1;
+                    V[x] = keyIndex;
+                    notPressed = false;
+                    break;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+
+int returnKeyPadIndex(const bool *pressed){
+    if(pressed[SDL_SCANCODE_1]){
+        return 1;
+    }else if(pressed[SDL_SCANCODE_2]){
+        return 2;
+    }else if(pressed[SDL_SCANCODE_3]){
+        return 3;
+    }else if(pressed[SDL_SCANCODE_4]){
+        return 12;
+    }else if(pressed[SDL_SCANCODE_Q]){
+        return 4;
+    }else if(pressed[SDL_SCANCODE_W]){
+        return 5;
+    }else if(pressed[SDL_SCANCODE_E]){
+        return 6;
+    }else if(pressed[SDL_SCANCODE_R]){
+        return 13;
+    }else if(pressed[SDL_SCANCODE_A]){
+        return 7;
+    }else if(pressed[SDL_SCANCODE_S]){
+        return 8;
+    }else if(pressed[SDL_SCANCODE_D]){
+        return 9;
+    }else if(pressed[SDL_SCANCODE_F]){
+        return 14;
+    }else if(pressed[SDL_SCANCODE_Z]){
+        return 10;
+    }else if(pressed[SDL_SCANCODE_X]){
+        return 0;
+    }else if(pressed[SDL_SCANCODE_C]){
+        return 11;
+    }else if(pressed[SDL_SCANCODE_V]){
+        return 15;
+    }
+    return -1;
+}

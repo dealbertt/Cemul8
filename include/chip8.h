@@ -13,7 +13,7 @@ typedef struct{
     bool running;
     SDL_Window *window;
     SDL_Renderer *renderer;
-    char filename[20];
+    char filename[50];
 }emulObjects;
 
 void initialize();
@@ -37,4 +37,11 @@ int updateScreen();
 
 int clearScreen();
 
+int handleRealKeyboard();
+unsigned char handleKeyPad();
+
+int waitForPress(unsigned char x);
+unsigned char returnKeyEquivalent(const bool *pressed);
+int returnKeyPadIndex(const bool *pressed);
+unsigned char checkHexValue();
 #endif

@@ -385,7 +385,7 @@ void decode(){
         case 0xE000: 
             switch (opcode & 0x000F) {
                 case 0x000E: //Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
-                    if(handleKeyPad() == V[(opcode & 0x0F00) >> 8]){
+                    if(keyPad[V[(opcode & 0x0F00) >> 8]] == 0x1){
                         pc += 4;
                     }else{
                         pc += 2;
@@ -393,7 +393,7 @@ void decode(){
                     break;
 
                 case 0x0001://Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
-                    if(handleKeyPad() != V[(opcode & 0x0F00) >> 8]){
+                    if(keyPad[V[(opcode & 0x0F00) >> 8]] == 0x0){
                         pc += 4;
                     }else{
                         pc += 2;
@@ -425,7 +425,6 @@ void decode(){
                         //pc stays the same, we stay on the same instruction
                     }else{
                         pc += 2; // we go to the next
-                        printf("Key pressed, going to the next!\n");
                     }
                 }
                 break;
@@ -553,6 +552,15 @@ int handleRealKeyboard(){
             if(event.key.scancode == SDL_SCANCODE_ESCAPE){
                 objects.running = false;
             }
+        }
+
+        if(event.type == SDL_EVENT_KEY_UP){
+            int keyIndex = returnKeyPadIndex(event.key.scancode);
+            printf("Key lifted: %d\n", keyIndex); 
+            if(keyIndex != -1){
+                keyPad[keyIndex] = 0x0;
+            }
+
         }
     }
     return 0;

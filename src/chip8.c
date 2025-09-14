@@ -1,4 +1,4 @@
-#include <iso646.h>
+#include <SDL3/SDL_scancode.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -138,6 +138,7 @@ int loadProgram(const char *fileName){
 }
 
 void simulateCpu(){
+    SDL_RenderPresent(objects.renderer);
     Uint64 frequency = SDL_GetPerformanceFrequency(); 
     Uint64 lastCycleTime = SDL_GetPerformanceCounter();
     Uint64 lastTimerTick = SDL_GetPerformanceCounter();
@@ -154,7 +155,7 @@ void simulateCpu(){
         double elapsedTimer = ((double)(now - lastTimerTick) / (double)frequency) * 1000.0;
 
         if(elapsedCycle >= cpuCycleMs){
-            //handleRealKeyboard();
+            handleRealKeyboard();
             emulateCycle();
             lastCycleTime = now;
         }else{
@@ -411,9 +412,21 @@ void decode(){
 
                 case 0x000A://Wait for a keypress and store the result in register VX
                 {
-                    unsigned char x = (opcode & 0x0F00) >> 8;
-                    waitForPress(x);
-                    pc+= 2;
+                    bool pressed = false;
+                    for (int i = 0; i < 16; i++) {
+                        if (keyPad[i] == 0x1){
+                            V[(opcode & 0x0F00) >> 8] = i;      // Store key in Vx
+                            pressed = true;
+                            break;
+                        }
+                    }
+
+                    if (!pressed) {
+                        //pc stays the same, we stay on the same instruction
+                    }else{
+                        pc += 2; // we go to the next
+                        printf("Key pressed, going to the next!\n");
+                    }
                 }
                 break;
 
@@ -520,59 +533,63 @@ unsigned char handleKeyPad(){
     }
     return 0;
 }
-int waitForPress(unsigned char x) {
-    bool notPressed = true;
+
+int handleRealKeyboard(){
     SDL_Event event;
-    while(notPressed){
-        while(SDL_PollEvent(&event)){
-            if(event.type == SDL_EVENT_KEY_DOWN){
-                const bool *pressed = SDL_GetKeyboardState(NULL);
-                int keyIndex = returnKeyPadIndex(pressed);
-                 if (keyIndex != -1) {
-                    keyPad[keyIndex] = 1;
-                    V[x] = keyIndex;
-                    notPressed = false;
-                    break;
-                }
+    while(SDL_PollEvent(&event)){
+
+        if(event.type == SDL_EVENT_QUIT){
+            objects.running = false;
+            return -1;
+        }
+
+        if(event.type == SDL_EVENT_KEY_DOWN){
+            int keyIndex = returnKeyPadIndex(event.key.scancode);
+            printf("Key pressed: %d\n", keyIndex); 
+            if(keyIndex != -1){
+                keyPad[keyIndex] = 0x1;
+            }
+
+            if(event.key.scancode == SDL_SCANCODE_ESCAPE){
+                objects.running = false;
             }
         }
     }
     return 0;
 }
 
-
-int returnKeyPadIndex(const bool *pressed){
-    if(pressed[SDL_SCANCODE_1]){
+int returnKeyPadIndex(SDL_Scancode code){
+    if(code == SDL_SCANCODE_1){
         return 1;
-    }else if(pressed[SDL_SCANCODE_2]){
+    }else if(code == SDL_SCANCODE_2){
         return 2;
-    }else if(pressed[SDL_SCANCODE_3]){
+    }else if(code == SDL_SCANCODE_3){
         return 3;
-    }else if(pressed[SDL_SCANCODE_4]){
+    }else if(code == SDL_SCANCODE_4){
         return 12;
-    }else if(pressed[SDL_SCANCODE_Q]){
+    }else if(code == SDL_SCANCODE_Q){
         return 4;
-    }else if(pressed[SDL_SCANCODE_W]){
+    }else if(code == SDL_SCANCODE_W){
         return 5;
-    }else if(pressed[SDL_SCANCODE_E]){
+    }else if(code == SDL_SCANCODE_E){
         return 6;
-    }else if(pressed[SDL_SCANCODE_R]){
+    }else if(code == SDL_SCANCODE_R){
         return 13;
-    }else if(pressed[SDL_SCANCODE_A]){
+    }else if(code == SDL_SCANCODE_A){
         return 7;
-    }else if(pressed[SDL_SCANCODE_S]){
+    }else if(code == SDL_SCANCODE_S){
         return 8;
-    }else if(pressed[SDL_SCANCODE_D]){
+    }else if(code == SDL_SCANCODE_D){
         return 9;
-    }else if(pressed[SDL_SCANCODE_F]){
+    }else if(code == SDL_SCANCODE_F){
         return 14;
-    }else if(pressed[SDL_SCANCODE_Z]){
+    }else if(code == SDL_SCANCODE_Z){
         return 10;
-    }else if(pressed[SDL_SCANCODE_X]){
+    }else if(code == SDL_SCANCODE_X){
         return 0;
-    }else if(pressed[SDL_SCANCODE_C]){
+    }else if(code == SDL_SCANCODE_C){
         return 11;
-    }else if(pressed[SDL_SCANCODE_V]){
+    }else if(code == SDL_SCANCODE_V){
         return 15;
     }
     return -1;

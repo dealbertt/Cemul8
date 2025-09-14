@@ -68,7 +68,7 @@ int main(int argc, char **argv){
     SDL_Delay(1000);
     simulateCpu();
 
-    SDL_Quit();
+    cleanup();
     return 0;
 }
 

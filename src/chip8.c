@@ -166,6 +166,7 @@ void simulateCpu(){
 
     */
 
+    uint32_t pixels[2048];
     objects.running = true;
     while(objects.running){
 
@@ -197,7 +198,17 @@ void simulateCpu(){
         handleRealKeyboard();
 
         if(drawFlag){
-            updateScreen();
+            drawFlag = false;
+            for (int i = 0; i < 2048; ++i) {
+                uint8_t pixel = gpx[i];
+                pixels[i] = (0x00FFFFFF * pixel) | 0xFF000000;
+            }
+            // Update SDL texture
+            SDL_UpdateTexture(objects.texture, NULL, pixels, 64 * sizeof(Uint32));
+            // Clear screen and render
+            SDL_RenderClear(objects.renderer);
+            SDL_RenderTexture(objects.renderer, objects.texture, NULL, NULL);
+            SDL_RenderPresent(objects.renderer);
         }
         SDL_DelayPrecise(1200000);
 
@@ -216,7 +227,10 @@ void emulateCycle(){
         case 0x0000:
             switch(opcode & 0x0FFF){
                 case 0x00E0:
-                    clearScreen();
+                    for(int i = 0; i < 2048; i++){
+                        gpx[i] = 0x0;
+                    }
+                    drawFlag = true;
                     pc += 2;
                     break;
                 
@@ -498,33 +512,6 @@ void emulateCycle(){
 
 }
 
-int updateScreen(){
-    drawFlag = false;
-
-    for(int x = 0; x < SCREEN_WIDTH; x++){
-        for(int y = 0; y < SCREEN_HEIGHT; y++){
-            if(gpx[x + (y * SCREEN_WIDTH)] == 0x1){
-                SDL_Color color = {255, 255, 255, 255};
-                drawScalatedPixel(x, y, objects.renderer, color);
-            }else{
-                SDL_Color color = {0, 0, 0, 255};
-                drawScalatedPixel(x, y, objects.renderer, color);
-            }
-        }
-    }
-    //Update the screen once all the pixels (SDL_FRect) have been set
-    SDL_RenderPresent(objects.renderer);
-    return 0;
-}
-
-
-int clearScreen(){
-    for(int i = 0; i < 2048; i++){
-        gpx[i] = 0x0;
-    }
-    drawFlag = true;
-    return 0;
-}
 
 
 

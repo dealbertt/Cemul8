@@ -13,6 +13,7 @@ typedef struct{
     bool running;
     SDL_Window *window;
     SDL_Renderer *renderer;
+    SDL_Texture *texture;
     char filename[150];
 }emulObjects;
 

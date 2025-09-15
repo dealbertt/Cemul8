@@ -1,3 +1,5 @@
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_pixels.h>
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
@@ -17,7 +19,8 @@
 
 Config *globalConfig;
 
-emulObjects objects = {.running = false, .window = NULL, .renderer = NULL};
+emulObjects objects = {.running = false, .window = NULL, .renderer = NULL, .texture = NULL};
+
 
 
 void quit(int signum);
@@ -39,20 +42,30 @@ int main(int argc, char **argv){
     if(argc > 1){
         setFileName(argv[1]);
     }else{
-        SDL_LogError(SDL_LOG_PRIORITY_ERROR, "No program has been provided for the emulator:");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "No program has been provided for the emulator:");
         return -1;
     }
 
     if(!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)){
-        SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error trying to initialize SDL: %s\n", SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to initialize SDL: %s\n", SDL_GetError());
         return -1;
     }
 
     if(!SDL_CreateWindowAndRenderer("emul8", SCREEN_WIDTH * globalConfig->scalingFactor, SCREEN_HEIGHT * globalConfig->scalingFactor, SDL_WINDOW_RESIZABLE, &objects.window, &objects.renderer)){
-        SDL_LogError(SDL_LOG_PRIORITY_ERROR, "Error on SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error on SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
         return -1;
     }
-    
+    objects.texture = SDL_CreateTexture(objects.renderer, 
+            SDL_PIXELFORMAT_ARGB8888, 
+            SDL_TEXTUREACCESS_STREAMING, 
+            SCREEN_WIDTH, SCREEN_HEIGHT);
+    if(objects.texture == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when creating SDL_Texture\n");
+        return -1;
+    }
+
+    SDL_SetTextureScaleMode(objects.texture, SDL_SCALEMODE_NEAREST);
+
 
     //Snippet to test the screen
     /*
@@ -79,10 +92,6 @@ void quit(int signum){
 }
 
 int setFileName(const char *argName){
-    if(strstr(argName, ".ch8") == NULL && strstr(argName, ".c8") == NULL){
-        printf("Please select a file with the extension .ch8 or .c8\n");
-        return -1;
-    }
 
     strcpy(objects.filename, argName);
     printf("FileName: %s\n", objects.filename);

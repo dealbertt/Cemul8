@@ -64,22 +64,22 @@ unsigned char chip8_fontset[80] =
 };
 
 SDL_Scancode keyMap[16] = {
-    SDL_SCANCODE_X,
-    SDL_SCANCODE_1,
-    SDL_SCANCODE_2,
-    SDL_SCANCODE_3,
-    SDL_SCANCODE_Q,
-    SDL_SCANCODE_W,
-    SDL_SCANCODE_E,
-    SDL_SCANCODE_A,
-    SDL_SCANCODE_S,
-    SDL_SCANCODE_D,
-    SDL_SCANCODE_Z,
-    SDL_SCANCODE_C,
-    SDL_SCANCODE_4,
-    SDL_SCANCODE_R,
-    SDL_SCANCODE_F,
-    SDL_SCANCODE_V,
+    SDL_SCANCODE_X, //0
+    SDL_SCANCODE_1, //1
+    SDL_SCANCODE_2, //2
+    SDL_SCANCODE_3, //3
+    SDL_SCANCODE_Q, //4
+    SDL_SCANCODE_W, //5
+    SDL_SCANCODE_E, //6
+    SDL_SCANCODE_A, //7
+    SDL_SCANCODE_S, //8
+    SDL_SCANCODE_D, //9
+    SDL_SCANCODE_Z, //A
+    SDL_SCANCODE_C, //B
+    SDL_SCANCODE_4, //C
+    SDL_SCANCODE_R, //D
+    SDL_SCANCODE_F, //E
+    SDL_SCANCODE_V, //F
 };
 
 //0x000-0x1FF - Chip 8 interpreter (contains font set in emu)
@@ -91,10 +91,10 @@ extern emulObjects objects;
 extern Config *globalConfig;
 
 void initialize(){
-     pc      = 0x200;    // Set program counter to 0x200
-    opcode  = 0;        // Reset op code
-    I     = 0;          // Reset I
-    sp      = 0;        // Reset stack pointer
+     pc = 0x200;    // Set program counter to 0x200
+    opcode = 0;        // Reset op code
+    I = 0;          // Reset I
+    sp = 0;        // Reset stack pointer
 
     // Clear the display
     for (int i = 0; i < 2048; ++i) {
@@ -214,6 +214,7 @@ void emulateCycle(){
     opcode = memory[pc] << 8 | memory[pc + 1];
 
     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Opcode: %04X\n", opcode);
+
     //DECODE
     switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 
         case 0x0000:
@@ -496,20 +497,8 @@ void emulateCycle(){
             SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
             pc += 2;
     } 
-    if (delay_timer > 0){
-        --delay_timer;
-    }
-
-    if (sound_timer > 0)
-        if(sound_timer == 1){
-            printf("BEEP\n");
-        }
-    --sound_timer;
 
 }
-
-
-
 
 int handleRealKeyboard(){
     SDL_Event event;

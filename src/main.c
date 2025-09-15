@@ -1,5 +1,3 @@
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_pixels.h>
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
@@ -7,6 +5,8 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_pixels.h>
 
 #include "../include/chip8.h"
 #include "../include/config.h"

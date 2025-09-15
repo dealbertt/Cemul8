@@ -156,7 +156,6 @@ int loadProgram(const char *fileName){
 }
 
 void simulateCpu(){
-    /*
     Uint64 frequency = SDL_GetPerformanceFrequency(); 
     Uint64 lastCycleTime = SDL_GetPerformanceCounter();
     Uint64 lastTimerTick = SDL_GetPerformanceCounter();
@@ -164,13 +163,11 @@ void simulateCpu(){
     const double cpuCycleMs = 2.0;         // CPU cycle every 2 ms
     const double timerIntervalMs = 1000.0 / 60.0; // 60 Hz timer -> ~16.67 ms
 
-    */
 
     uint32_t pixels[2048];
     objects.running = true;
     while(objects.running){
 
-        /*
         Uint64 now = SDL_GetPerformanceCounter();
         double elapsedCycle = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
         double elapsedTimer = ((double)(now - lastTimerTick) / (double)frequency) * 1000.0;
@@ -193,10 +190,6 @@ void simulateCpu(){
             lastTimerTick = now;
         }
 
-        */
-        emulateCycle();
-        handleRealKeyboard();
-
         if(drawFlag){
             drawFlag = false;
             for (int i = 0; i < 2048; ++i) {
@@ -210,7 +203,6 @@ void simulateCpu(){
             SDL_RenderTexture(objects.renderer, objects.texture, NULL, NULL);
             SDL_RenderPresent(objects.renderer);
         }
-        SDL_DelayPrecise(1200000);
 
     }
 
@@ -461,10 +453,12 @@ void emulateCycle(){
                     break;
 
                 case 0x001E:
-                    if(I + V[(opcode & 0x0F00) >> 8] > 0xFFF)
+                    if(I + V[(opcode & 0x0F00) >> 8] > 0xFFF){
                         V[0xF] = 1;
-                    else
+                    }
+                    else{
                         V[0xF] = 0;
+                    }
                     I += V[(opcode & 0x0F00) >> 8];
                     pc += 2;
                     break;
@@ -502,12 +496,14 @@ void emulateCycle(){
             SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
             pc += 2;
     } 
-    if (delay_timer > 0)
+    if (delay_timer > 0){
         --delay_timer;
+    }
 
     if (sound_timer > 0)
-        if(sound_timer == 1)
+        if(sound_timer == 1){
             printf("BEEP\n");
+        }
     --sound_timer;
 
 }

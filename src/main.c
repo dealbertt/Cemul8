@@ -12,8 +12,7 @@
 
 /*
  TODO:
- - Finish implementing/polishing the keyboard on the emulator. You have to integrate the real keyboard with the chip8 keypad, also make sure that the array called keyPad is modified according to the keys that are pressed, (1 if pressed and 0 if not, idk smth like that :))
-
+ - Check the mapping of the real keyboard to the chip8 keypad, i dont think its that well implmented
  */
 
 Config *globalConfig;
@@ -64,7 +63,9 @@ int main(int argc, char **argv){
     SDL_Delay(1000);
     */
     initialize();
-    loadProgram(objects.filename);
+    if(loadProgram(objects.filename) == -1){
+        cleanup();
+    }
     SDL_Delay(1000);
     simulateCpu();
 
@@ -77,10 +78,12 @@ void quit(int signum){
 }
 
 int setFileName(const char *argName){
+    /*
     if(strstr(argName, ".ch8") == NULL && strstr(argName, ".c8") == NULL){
         printf("Please select a file with the extension .ch8 or .c8\n");
         return -1;
     }
+    */
 
     strcpy(objects.filename, argName);
     printf("FileName: %s\n", objects.filename);

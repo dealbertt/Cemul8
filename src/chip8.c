@@ -1,4 +1,5 @@
 #include <SDL3/SDL_scancode.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,6 +63,25 @@ unsigned char chip8_fontset[80] =
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
+SDL_Scancode keyMap[16] = {
+    SDL_SCANCODE_X,
+    SDL_SCANCODE_1,
+    SDL_SCANCODE_2,
+    SDL_SCANCODE_3,
+    SDL_SCANCODE_Q,
+    SDL_SCANCODE_W,
+    SDL_SCANCODE_E,
+    SDL_SCANCODE_A,
+    SDL_SCANCODE_S,
+    SDL_SCANCODE_D,
+    SDL_SCANCODE_Z,
+    SDL_SCANCODE_C,
+    SDL_SCANCODE_4,
+    SDL_SCANCODE_R,
+    SDL_SCANCODE_F,
+    SDL_SCANCODE_V,
+};
+
 //0x000-0x1FF - Chip 8 interpreter (contains font set in emu)
 //0x050-0x0A0 - Used for the built in 4x5 pixel font set (0-F)
 //0x200-0xFFF - Program ROM and work RAM
@@ -71,39 +91,37 @@ extern emulObjects objects;
 extern Config *globalConfig;
 
 void initialize(){
-    initializeMemory();
-    initRegisters();
-}
+     pc      = 0x200;    // Set program counter to 0x200
+    opcode  = 0;        // Reset op code
+    I     = 0;          // Reset I
+    sp      = 0;        // Reset stack pointer
 
-void initializeMemory(){
-    opcode = 0x0;
-    delay_timer = 0x0;
-    sound_timer = 0x0;
+    // Clear the display
+    for (int i = 0; i < 2048; ++i) {
+        gpx[i] = 0;
+    }
 
-    for(int i = 0; i < 80; i++){
+    // Clear the stack, keypad, and V registers
+    for (int i = 0; i < 16; ++i) {
+        stack[i]    = 0;
+        keyPad[i]      = 0;
+        V[i]        = 0;
+    }
+
+    // Clear memory
+    for (int i = 0; i < 4096; ++i) {
+        memory[i] = 0;
+    }
+
+    // Load font set into memory
+    for (int i = 0; i < 80; ++i) {
         memory[i] = chip8_fontset[i];
     }
 
-    for(int i = 80; i < MEMORY; i++){
-        memory[i] = 0x0;
-    }
+    // Reset timers
+    delay_timer = 0;
+    sound_timer = 0;
 
-    for(int i = 0; i < 16; i++){
-        stack[i] = 0x0;
-    }
-
-    for(int i = 0; i < (SCREEN_WIDTH * SCREEN_HEIGHT); i++){
-        gpx[i] = 0x0;
-    }
-    pc = 0x200; //After the part of the memory that has the fontset loaded
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: PC: 0x%04X\n", pc);
-}
-
-void initRegisters(){
-    for(int i = 0; i < 16; i++){
-        V[i] = 0;
-    }
-    I = 0;
 }
 
 int loadProgram(const char *fileName){
@@ -138,7 +156,7 @@ int loadProgram(const char *fileName){
 }
 
 void simulateCpu(){
-    SDL_RenderPresent(objects.renderer);
+    /*
     Uint64 frequency = SDL_GetPerformanceFrequency(); 
     Uint64 lastCycleTime = SDL_GetPerformanceCounter();
     Uint64 lastTimerTick = SDL_GetPerformanceCounter();
@@ -146,20 +164,21 @@ void simulateCpu(){
     const double cpuCycleMs = 2.0;         // CPU cycle every 2 ms
     const double timerIntervalMs = 1000.0 / 60.0; // 60 Hz timer -> ~16.67 ms
 
+    */
 
     objects.running = true;
     while(objects.running){
 
+        /*
         Uint64 now = SDL_GetPerformanceCounter();
         double elapsedCycle = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
         double elapsedTimer = ((double)(now - lastTimerTick) / (double)frequency) * 1000.0;
 
         if(elapsedCycle >= cpuCycleMs){
-            handleRealKeyboard();
             emulateCycle();
+            handleRealKeyboard();
             lastCycleTime = now;
         }else{
-            SDL_Delay(1);
         }
 
         if(elapsedTimer >= timerIntervalMs) {
@@ -173,25 +192,24 @@ void simulateCpu(){
             lastTimerTick = now;
         }
 
+        */
+        emulateCycle();
+        handleRealKeyboard();
+
         if(drawFlag){
             updateScreen();
         }
+        SDL_DelayPrecise(1200000);
 
     }
 
 }
 
-unsigned short fetchOpcode(){
-    return memory[pc] << 8 | memory[pc + 1];
-}
+
 
 void emulateCycle(){
-    //FETCH
-    opcode = fetchOpcode();
-    decode();
-}
+    opcode = memory[pc] << 8 | memory[pc + 1];
 
-void decode(){
     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Opcode: %04X\n", opcode);
     //DECODE
     switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 
@@ -209,7 +227,7 @@ void decode(){
                     }else{
                         SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: The stack pointer is less than 0!\nCurrent value of sp: %d\n", sp);
                     }
-                    //pc += 2;
+                    pc += 2;
                     break;
             }
             break;
@@ -229,8 +247,6 @@ void decode(){
 
         case 0x3000:
             if(V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF)){
-                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Value being compared to VX: %04X\n", opcode & 0x00FF);
-                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "VX: %04X\n", V[(opcode & 0x00FF) >> 8]);
                 pc += 4;
             }else{
                 pc += 2;
@@ -286,45 +302,36 @@ void decode(){
 
 
                 case 0x0004: //Add the value of register VY to register VX
-                    {
-                        unsigned int addition = 0;
-                        addition = V[(opcode & 0X0F00) >> 8] + V[(opcode & 0X00F0) >> 4];
-                        V[(opcode & 0X0F00) >> 8] = addition;
-                        if(addition > 255){
-                            V[15] = 0x01; 
-                        }else{
-                            V[15] = 0x00; 
-                        }
-                        pc += 2;
-                    }
-                    break;
-
-                case 0x0005: //Subtract the value of register VY from register VX
-                    {
-                        int substraction = V[(opcode & 0X0F00) >> 8] - V[(opcode & 0X00F0) >> 4];
-                        V[(opcode & 0X0F00) >> 8] = substraction;
-                        if(substraction < 0){
-                            V[15] = 0x01; 
-                        }else{
-                            V[15] = 0x00; 
-                        }
-                        pc += 2;
-                        break;
-                    }
-
-                case 0x0006: //Store the value of register VY shifted right one bit in register VX
-                    V[(opcode & 0X0F00) >> 8] = (V[(opcode & 0X00F0) >> 4] >> 1);
-                    V[15] = V[(opcode & 0X00F0) >> 4] & 0x01;
+                    V[(opcode & 0X0F00) >> 8] += V[(opcode & 0x00F0) >> 4];
+                    if(V[(opcode & 0x00F0) >> 4] > (0xFF - V[(opcode & 0x0F00) >> 8]))
+                        V[0xF] = 1; //carry
+                    else
+                        V[0xF] = 0;
                     pc += 2;
                     break;
 
-                case 0x0007: //Set register VX to the value of VY minus VX
-                    {
-                        int substraction = (V[(opcode & 0X00F0) >> 4] - V[(opcode & 0X0F00) >> 8]);
-                        V[(opcode & 0X0F00) >> 8] = substraction;
-                        V[15] = V[(opcode & 0X00F0) >> 4] & 0x01;
+                case 0x0005: //Subtract the value of register VY from register VX
+                        if(V[(opcode & 0x00F0) >> 4] > V[(opcode & 0x0F00) >> 8])
+                            V[0xF] = 0; // there is a borrow
+                        else
+                            V[0xF] = 1;
+                        V[(opcode & 0x0F00) >> 8] -= V[(opcode & 0x00F0) >> 4];
                         pc += 2;
-                    }
+                        break;
+
+                case 0x0006: //Store the value of register VY shifted right one bit in register VX
+                        V[0xF] = V[(opcode & 0x0F00) >> 8] & 0x1;
+                        V[(opcode & 0x0F00) >> 8] >>= 1;
+                        pc += 2;
+                        break;
+
+                case 0x0007: //Set register VX to the value of VY minus VX
+                        if(V[(opcode & 0x0F00) >> 8] > V[(opcode & 0x00F0) >> 4])	// VY-VX
+                            V[0xF] = 0; // there is a borrow
+                        else
+                            V[0xF] = 1;
+                        V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] - V[(opcode & 0x0F00) >> 8];
+                        pc += 2;
                     break;
 
                 case 0x000E: //Store the value of register VY shifted left one bit in register VX
@@ -405,7 +412,6 @@ void decode(){
         case 0xF000:
             switch (opcode & 0x00FF){
                 case 0x0007://Store the current value of the  delay timer in register VX
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Value of delay timer: %04X\n", delay_timer);
                     V[(opcode & 0x0F00) >> 8] = delay_timer; 
                     pc+= 2;
                     break;
@@ -423,6 +429,7 @@ void decode(){
 
                     if (!pressed) {
                         //pc stays the same, we stay on the same instruction
+                        return;
                     }else{
                         pc += 2; // we go to the next
                     }
@@ -431,26 +438,26 @@ void decode(){
 
                 case 0x0015://Set the delay timer to the value of register VX
                     delay_timer = V[(opcode & 0X0F00) >> 8]; 
-                    pc+= 2;
+                    pc += 2;
                     break;
 
                 case 0x0018://Set the sound timer to the value of register VX
                     sound_timer = V[(opcode & 0X0F00) >> 8]; 
-                    pc+= 2;
+                    pc += 2;
                     break;
 
                 case 0x001E:
-                    I += V[(opcode & 0X0F00) >> 8]; 
-                    pc+= 2;
+                    if(I + V[(opcode & 0x0F00) >> 8] > 0xFFF)
+                        V[0xF] = 1;
+                    else
+                        V[0xF] = 0;
+                    I += V[(opcode & 0x0F00) >> 8];
+                    pc += 2;
                     break;
 
                 case 0x0029://Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
-                    {
-                        unsigned char hexValue = V[(opcode & 0x0F00) >> 8];
-                        I = hexValue * 5; //Has to point to the address, not to the content of the address
-                        SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Hex value of FX29 instruction: %d\n", hexValue);
-                        pc+= 2;
-                    }
+                    I = V[(opcode & 0x0F00) >> 8] * 0x5;
+                    pc+= 2;
                     break;
 
                 case 0x0033://Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
@@ -462,17 +469,17 @@ void decode(){
 
                     case 0x0055: //Store the values of registers V0 to VX inclusive in memory starting at address I. I is set to I + X + 1 after operation²
                     for(int i = 0; i < (opcode & 0x0F00); i++){
-                        memory[I] = V[i];
+                        memory[I + i] = V[i];
                     }
-                    I = I + (opcode & 0x0F00) + 1;
+                    I += ((opcode & 0x0F00) >> 8) + 1;
                     pc+= 2;
                     break;
 
                 case 0x0065: //Fill registers V0 to VX inclusive with the values stored in memory starting at address I. I is set to I + X + 1 after operation²
-                    for(int i = 0; i < (opcode & 0x0F00); i++){
-                        V[i] = memory[I];
+                    for(int i = 0; i <= ((opcode & 0x0F00) >> 8); i++){
+                        V[i] = memory[I + i];
                     }
-                    I = I + (opcode & 0x0F00) + 1;
+                    I += ((opcode & 0x0F00) >> 8) + 1;
                     pc+= 2;
                     break;
             }
@@ -481,13 +488,22 @@ void decode(){
             SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
             pc += 2;
     } 
+    if (delay_timer > 0)
+        --delay_timer;
+
+    if (sound_timer > 0)
+        if(sound_timer == 1)
+            printf("BEEP\n");
+    --sound_timer;
 
 }
 
 int updateScreen(){
+    drawFlag = false;
+
     for(int x = 0; x < SCREEN_WIDTH; x++){
         for(int y = 0; y < SCREEN_HEIGHT; y++){
-            if(gpx[x + (y * SCREEN_WIDTH)] == 1){
+            if(gpx[x + (y * SCREEN_WIDTH)] == 0x1){
                 SDL_Color color = {255, 255, 255, 255};
                 drawScalatedPixel(x, y, objects.renderer, color);
             }else{
@@ -498,40 +514,19 @@ int updateScreen(){
     }
     //Update the screen once all the pixels (SDL_FRect) have been set
     SDL_RenderPresent(objects.renderer);
-    drawFlag = false;
     return 0;
 }
 
 
 int clearScreen(){
-    for(int y = 0; y < SCREEN_HEIGHT; y++){
-        for(int x = 0; x < SCREEN_WIDTH; x++){
-            gpx[x + (y * 64)] = 0x0;
-        }
+    for(int i = 0; i < 2048; i++){
+        gpx[i] = 0x0;
     }
     drawFlag = true;
     return 0;
 }
 
 
-unsigned char handleKeyPad(){
-    SDL_Event event;
-    SDL_PollEvent(&event);
-
-    //const bool *pressed = SDL_GetKeyboardState(NULL);
-    if(event.type == SDL_EVENT_QUIT){
-        SDL_Quit();
-        return 0xF0;
-    }
-
-    if(event.type == SDL_EVENT_KEY_DOWN){
-        int keyIndex = 0;
-        if(keyIndex != -1){
-            keyPad[keyIndex] = 1;
-        }
-    }
-    return 0;
-}
 
 int handleRealKeyboard(){
     SDL_Event event;
@@ -543,10 +538,18 @@ int handleRealKeyboard(){
         }
 
         if(event.type == SDL_EVENT_KEY_DOWN){
+            /*
             int keyIndex = returnKeyPadIndex(event.key.scancode);
-            printf("Key pressed: %d\n", keyIndex); 
             if(keyIndex != -1){
+                SDL_LogDebug(SDL_LOG_CATEGORY_INPUT, "[DEBUG]: Key pressed: %d\n", keyIndex); 
                 keyPad[keyIndex] = 0x1;
+                break;
+            }
+            */
+            for(int i = 0; i < 16; i++){
+                if(keyMap[i] == event.key.scancode){
+                    keyPad[i] = 0x1;
+                }
             }
 
             if(event.key.scancode == SDL_SCANCODE_ESCAPE){
@@ -555,16 +558,32 @@ int handleRealKeyboard(){
         }
 
         if(event.type == SDL_EVENT_KEY_UP){
+            /*
             int keyIndex = returnKeyPadIndex(event.key.scancode);
-            printf("Key lifted: %d\n", keyIndex); 
             if(keyIndex != -1){
+                SDL_LogDebug(SDL_LOG_CATEGORY_INPUT, "[DEBUG]: Key lifted: %d\n", keyIndex); 
                 keyPad[keyIndex] = 0x0;
+                break;
+            }
+            */
+            for(int i = 0; i < 16; i++){
+                if(keyMap[i] == event.key.scancode){
+                    keyPad[i] = 0x0;
+                }
             }
 
         }
     }
     return 0;
 }
+
+// CHIP-8 Keypad to Keyboard Mapping:
+// CHIP-8: 1 2 3 C   -> Keyboard: 1 2 3 4
+// CHIP-8: 4 5 6 D   -> Keyboard: Q W E R
+// CHIP-8: 7 8 9 E   -> Keyboard: A S D F
+// CHIP-8: A 0 B F   -> Keyboard: Z X C V
+//
+//
 
 int returnKeyPadIndex(SDL_Scancode code){
     if(code == SDL_SCANCODE_1){

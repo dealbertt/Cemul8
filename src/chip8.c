@@ -91,10 +91,10 @@ extern emulObjects objects;
 extern Config *globalConfig;
 
 void initialize(){
-     pc = 0x200;    // Set program counter to 0x200
-    opcode = 0;        // Reset op code
-    I = 0;          // Reset I
-    sp = 0;        // Reset stack pointer
+    pc = 0x200; // Set program counter to 0x200
+    opcode = 0; // Reset op code
+    I = 0;      // Reset I
+    sp = 0;     // Reset stack pointer
 
     // Clear the display
     for (int i = 0; i < 2048; ++i) {
@@ -223,6 +223,7 @@ void emulateCycle(){
                     for(int i = 0; i < 2048; i++){
                         gpx[i] = 0x0;
                     }
+
                     drawFlag = true;
                     pc += 2;
                     break;

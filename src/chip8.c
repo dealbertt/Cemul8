@@ -507,6 +507,13 @@ void emulateCycle(){
 
 }
 
+// CHIP-8 Keypad to Keyboard Mapping:
+// CHIP-8: 1 2 3 C   -> Keyboard: 1 2 3 4
+// CHIP-8: 4 5 6 D   -> Keyboard: Q W E R
+// CHIP-8: 7 8 9 E   -> Keyboard: A S D F
+// CHIP-8: A 0 B F   -> Keyboard: Z X C V
+//
+
 int handleRealKeyboard(){
     SDL_Event event;
     while(SDL_PollEvent(&event)){
@@ -517,38 +524,25 @@ int handleRealKeyboard(){
         }
 
         if(event.type == SDL_EVENT_KEY_DOWN){
-            /*
-            int keyIndex = returnKeyPadIndex(event.key.scancode);
-            if(keyIndex != -1){
-                SDL_LogDebug(SDL_LOG_CATEGORY_INPUT, "[DEBUG]: Key pressed: %d\n", keyIndex); 
-                keyPad[keyIndex] = 0x1;
-                break;
-            }
-            */
             for(int i = 0; i < 16; i++){
                 if(keyMap[i] == event.key.scancode){
                     keyPad[i] = 0x1;
                 }
             }
 
-            if(event.key.scancode == SDL_SCANCODE_ESCAPE){
+            if(event.key.scancode == SDL_SCANCODE_ESCAPE)
                 objects.start= false;
-            }
 
-            if(event.key.scancode == SDL_SCANCODE_F1){
+            if(event.key.scancode == SDL_SCANCODE_F1)
                 objects.keepGoing = !objects.keepGoing;
+
+            if(event.key.scancode == SDL_SCANCODE_F2){
+                if(!objects.keepGoing)
+                checkRegisters();
             }
         }
 
         if(event.type == SDL_EVENT_KEY_UP){
-            /*
-            int keyIndex = returnKeyPadIndex(event.key.scancode);
-            if(keyIndex != -1){
-                SDL_LogDebug(SDL_LOG_CATEGORY_INPUT, "[DEBUG]: Key lifted: %d\n", keyIndex); 
-                keyPad[keyIndex] = 0x0;
-                break;
-            }
-            */
             for(int i = 0; i < 16; i++){
                 if(keyMap[i] == event.key.scancode){
                     keyPad[i] = 0x0;
@@ -559,56 +553,23 @@ int handleRealKeyboard(){
     }
     return 0;
 }
-
-// CHIP-8 Keypad to Keyboard Mapping:
-// CHIP-8: 1 2 3 C   -> Keyboard: 1 2 3 4
-// CHIP-8: 4 5 6 D   -> Keyboard: Q W E R
-// CHIP-8: 7 8 9 E   -> Keyboard: A S D F
-// CHIP-8: A 0 B F   -> Keyboard: Z X C V
-//
 //
 
-int returnKeyPadIndex(SDL_Scancode code){
-    if(code == SDL_SCANCODE_1){
-        return 1;
-    }else if(code == SDL_SCANCODE_2){
-        return 2;
-    }else if(code == SDL_SCANCODE_3){
-        return 3;
-    }else if(code == SDL_SCANCODE_4){
-        return 12;
-    }else if(code == SDL_SCANCODE_Q){
-        return 4;
-    }else if(code == SDL_SCANCODE_W){
-        return 5;
-    }else if(code == SDL_SCANCODE_E){
-        return 6;
-    }else if(code == SDL_SCANCODE_R){
-        return 13;
-    }else if(code == SDL_SCANCODE_A){
-        return 7;
-    }else if(code == SDL_SCANCODE_S){
-        return 8;
-    }else if(code == SDL_SCANCODE_D){
-        return 9;
-    }else if(code == SDL_SCANCODE_F){
-        return 14;
-    }else if(code == SDL_SCANCODE_Z){
-        return 10;
-    }else if(code == SDL_SCANCODE_X){
-        return 0;
-    }else if(code == SDL_SCANCODE_C){
-        return 11;
-    }else if(code == SDL_SCANCODE_V){
-        return 15;
-    }
-    return -1;
-}
 
 void checkRegisters(){
     printf("CHIP-8 REGISTERS: \n");
+
     for(int i = 0; i < 16; i++){
         printf("V[%d]: %04X\n", i, V[i]);
     }
+    printf("I: %04X\n", I);
     printf("-------------\n");
+}
+
+void checkStack(){
+    printf("CHIP-8 STACK: \n");
+    for(int i = 0; i < 16; i++){
+        printf("stack[%d]: %04X\n", i, stack[i]);
+    }
+    
 }

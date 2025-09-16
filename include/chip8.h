@@ -42,8 +42,7 @@ int clearScreen();
 int handleRealKeyboard();
 unsigned char handleKeyPad();
 
-unsigned char returnKeyEquivalent(const bool *pressed);
-int returnKeyPadIndex(SDL_Scancode code);
-unsigned char checkHexValue();
+
+void checkStack();
 void checkRegisters();
 #endif

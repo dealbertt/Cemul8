@@ -12,6 +12,7 @@
 typedef struct{
     bool start;
     bool keepGoing;
+    bool executeOnce;
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *texture;

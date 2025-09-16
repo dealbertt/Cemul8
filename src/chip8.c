@@ -167,6 +167,7 @@ void simulateCpu(){
     uint32_t pixels[2048];
     objects.start= true;
     objects.keepGoing = true;
+
     while(objects.start){
 
         if(objects.keepGoing){
@@ -206,8 +207,27 @@ void simulateCpu(){
                 SDL_RenderPresent(objects.renderer);
             }
 
-        }else{
+        }else{ //the execution is stopped
             handleRealKeyboard();
+            if(objects.executeOnce){
+
+                emulateCycle();
+                if(drawFlag){
+                    drawFlag = false;
+                    for (int i = 0; i < 2048; ++i) {
+                        uint8_t pixel = gpx[i];
+                        pixels[i] = (0x00FFFFFF * pixel) | 0xFF000000;
+                    }
+                    // Update SDL texture
+                    SDL_UpdateTexture(objects.texture, NULL, pixels, 64 * sizeof(Uint32));
+                    // Clear screen and render
+                    SDL_RenderClear(objects.renderer);
+                    SDL_RenderTexture(objects.renderer, objects.texture, NULL, NULL);
+                    SDL_RenderPresent(objects.renderer);
+                }
+                objects.executeOnce = false;
+            }
+
         }
 
     }
@@ -546,6 +566,11 @@ int handleRealKeyboard(){
                 checkStack();
             }
 
+            if(event.key.scancode == SDL_SCANCODE_F4){
+                if(!objects.keepGoing)
+                checkInternals();
+            }
+
             if(event.key.scancode == SDL_SCANCODE_F5){
                 objects.keepGoing = !objects.keepGoing;
                 checkRegisters();
@@ -553,6 +578,11 @@ int handleRealKeyboard(){
                 checkKeyPad();
                 checkInternals();
             }
+
+            if(event.key.scancode == SDL_SCANCODE_F6){
+                objects.executeOnce = true;
+            }
+
         }
 
         if(event.type == SDL_EVENT_KEY_UP){
@@ -593,8 +623,6 @@ void checkKeyPad(){
     for(int i = 0; i < 16; i++){
         printf("keypad[%d]: %04X\n", i, keyPad[i]);
     }
-
-
     printf("-------------\n");
 }
 

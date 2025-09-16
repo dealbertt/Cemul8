@@ -10,7 +10,8 @@
 #include <SDL3/SDL.h>
 
 typedef struct{
-    bool running;
+    bool start;
+    bool keepGoing;
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *texture;
@@ -44,4 +45,5 @@ unsigned char handleKeyPad();
 unsigned char returnKeyEquivalent(const bool *pressed);
 int returnKeyPadIndex(SDL_Scancode code);
 unsigned char checkHexValue();
+void checkRegisters();
 #endif

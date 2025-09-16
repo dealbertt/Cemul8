@@ -103,9 +103,9 @@ void initialize(){
 
     // Clear the stack, keypad, and V registers
     for (int i = 0; i < 16; ++i) {
-        stack[i]    = 0;
-        keyPad[i]      = 0;
-        V[i]        = 0;
+        stack[i] = 0;
+        keyPad[i] = 0;
+        V[i] = 0;
     }
 
     // Clear memory
@@ -165,43 +165,49 @@ void simulateCpu(){
 
 
     uint32_t pixels[2048];
-    objects.running = true;
-    while(objects.running){
+    objects.start= true;
+    objects.keepGoing = true;
+    while(objects.start){
 
-        Uint64 now = SDL_GetPerformanceCounter();
-        double elapsedCycle = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
-        double elapsedTimer = ((double)(now - lastTimerTick) / (double)frequency) * 1000.0;
+        if(objects.keepGoing){
+            Uint64 now = SDL_GetPerformanceCounter();
+            double elapsedCycle = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
+            double elapsedTimer = ((double)(now - lastTimerTick) / (double)frequency) * 1000.0;
 
-        if(elapsedCycle >= cpuCycleMs){
-            emulateCycle();
-            handleRealKeyboard();
-            lastCycleTime = now;
-        }else{
-        }
+            if(elapsedCycle >= cpuCycleMs){
+                emulateCycle();
+                handleRealKeyboard();
+                lastCycleTime = now;
+            }else{
+            }
 
-        if(elapsedTimer >= timerIntervalMs) {
-            if(delay_timer > 0) delay_timer--;
-            if(sound_timer > 0) {
-                sound_timer--;
-                if(sound_timer == 0) {
-                    printf("Beep!\n"); // Or trigger actual sound
+            if(elapsedTimer >= timerIntervalMs) {
+                if(delay_timer > 0) delay_timer--;
+                if(sound_timer > 0) {
+                    sound_timer--;
+                    if(sound_timer == 0) {
+                        printf("Beep!\n"); // Or trigger actual sound
+                    }
                 }
+                lastTimerTick = now;
             }
-            lastTimerTick = now;
-        }
 
-        if(drawFlag){
-            drawFlag = false;
-            for (int i = 0; i < 2048; ++i) {
-                uint8_t pixel = gpx[i];
-                pixels[i] = (0x00FFFFFF * pixel) | 0xFF000000;
+            if(drawFlag){
+                drawFlag = false;
+                for (int i = 0; i < 2048; ++i) {
+                    uint8_t pixel = gpx[i];
+                    pixels[i] = (0x00FFFFFF * pixel) | 0xFF000000;
+                }
+                // Update SDL texture
+                SDL_UpdateTexture(objects.texture, NULL, pixels, 64 * sizeof(Uint32));
+                // Clear screen and render
+                SDL_RenderClear(objects.renderer);
+                SDL_RenderTexture(objects.renderer, objects.texture, NULL, NULL);
+                SDL_RenderPresent(objects.renderer);
             }
-            // Update SDL texture
-            SDL_UpdateTexture(objects.texture, NULL, pixels, 64 * sizeof(Uint32));
-            // Clear screen and render
-            SDL_RenderClear(objects.renderer);
-            SDL_RenderTexture(objects.renderer, objects.texture, NULL, NULL);
-            SDL_RenderPresent(objects.renderer);
+
+        }else{
+            handleRealKeyboard();
         }
 
     }
@@ -506,7 +512,7 @@ int handleRealKeyboard(){
     while(SDL_PollEvent(&event)){
 
         if(event.type == SDL_EVENT_QUIT){
-            objects.running = false;
+            objects.start = false;
             return -1;
         }
 
@@ -526,7 +532,11 @@ int handleRealKeyboard(){
             }
 
             if(event.key.scancode == SDL_SCANCODE_ESCAPE){
-                objects.running = false;
+                objects.start= false;
+            }
+
+            if(event.key.scancode == SDL_SCANCODE_F1){
+                objects.keepGoing = !objects.keepGoing;
             }
         }
 
@@ -593,4 +603,12 @@ int returnKeyPadIndex(SDL_Scancode code){
         return 15;
     }
     return -1;
+}
+
+void checkRegisters(){
+    printf("CHIP-8 REGISTERS: \n");
+    for(int i = 0; i < 16; i++){
+        printf("V[%d]: %04X\n", i, V[i]);
+    }
+    printf("-------------\n");
 }

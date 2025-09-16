@@ -19,7 +19,7 @@
 
 Config *globalConfig;
 
-emulObjects objects = {.running = false, .window = NULL, .renderer = NULL, .texture = NULL};
+emulObjects objects = {.start= false, .keepGoing = false, .window = NULL, .renderer = NULL, .texture = NULL};
 
 
 

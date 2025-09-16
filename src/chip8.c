@@ -540,6 +540,19 @@ int handleRealKeyboard(){
                 if(!objects.keepGoing)
                 checkRegisters();
             }
+
+            if(event.key.scancode == SDL_SCANCODE_F3){
+                if(!objects.keepGoing)
+                checkStack();
+            }
+
+            if(event.key.scancode == SDL_SCANCODE_F5){
+                objects.keepGoing = !objects.keepGoing;
+                checkRegisters();
+                checkStack();
+                checkKeyPad();
+                checkInternals();
+            }
         }
 
         if(event.type == SDL_EVENT_KEY_UP){
@@ -571,5 +584,26 @@ void checkStack(){
     for(int i = 0; i < 16; i++){
         printf("stack[%d]: %04X\n", i, stack[i]);
     }
-    
+    printf("-------------\n");
+}
+
+
+void checkKeyPad(){
+    printf("CHIP-8 KEYPAD: \n");
+    for(int i = 0; i < 16; i++){
+        printf("keypad[%d]: %04X\n", i, keyPad[i]);
+    }
+
+
+    printf("-------------\n");
+}
+
+void checkInternals(){
+        
+    printf("CHIP-8 INTERNALS: \n");
+    printf("PC: %04X\n", pc);
+    printf("delay_timer: %04X\n", delay_timer);
+    printf("sound_timer: %04X\n", sound_timer);
+    printf("opcode: %04X\n", opcode);
+    printf("-------------\n");
 }

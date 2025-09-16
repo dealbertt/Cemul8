@@ -43,6 +43,8 @@ int handleRealKeyboard();
 unsigned char handleKeyPad();
 
 
-void checkStack();
 void checkRegisters();
+void checkStack();
+void checkKeyPad();
+void checkInternals();
 #endif

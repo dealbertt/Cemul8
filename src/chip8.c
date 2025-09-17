@@ -237,12 +237,12 @@ void simulateCpu(){
 
 
 void emulateCycle(){
-    opcode = memory[pc] << 8 | memory[pc + 1];
+    opcode = (memory[pc] << 8) | (memory[pc + 1]);
 
     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Opcode: %04X\n", opcode);
 
     //DECODE
-    switch(opcode & 0xF000){ //You only want to look at the first digit because is the one that tells you the opcode, therefore the AND operation with the 0xF000 
+    switch(opcode & 0xF000){        
         case 0x0000:
             switch(opcode & 0x0FFF){
                 case 0x00E0:
@@ -272,7 +272,7 @@ void emulateCycle(){
         case 0x2000: //calls subroutine at address NNN
             if(sp < 16){
                 stack[sp] = pc;
-                sp++; //avoid overwriting the current stack
+                sp++; 
                 pc = opcode & 0x0FFF;
             }else{
                 SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: The stack pointer is greater than 15!\nCurrent value of sp: %d\n", sp);
@@ -281,6 +281,8 @@ void emulateCycle(){
 
         case 0x3000:
             if(V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF)){
+                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of VX: %04X\n", V[(opcode & 0x0F00) >> 8]);
+                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", (opcode & 0x00FF));
                 pc += 4;
             }else{
                 pc += 2;
@@ -336,21 +338,29 @@ void emulateCycle(){
 
 
                 case 0x0004: //Add the value of register VY to register VX
-                    V[(opcode & 0X0F00) >> 8] += V[(opcode & 0x00F0) >> 4];
-                    if(V[(opcode & 0x00F0) >> 4] > (0xFF - V[(opcode & 0x0F00) >> 8]))
-                        V[0xF] = 1; //carry
-                    else
+                    if(V[(opcode & 0x0F00) >> 8] + V[(opcode & 0x00F0) >> 4] > 0xFF){
+                        V[0xF] = 1;
+                    }else{
                         V[0xF] = 0;
+                    }
+                    V[(opcode & 0x0F00) >> 8] += V[(opcode & 0x00F0) >> 4];
                     pc += 2;
                     break;
 
                 case 0x0005: //Subtract the value of register VY from register VX
-                        if(V[(opcode & 0x00F0) >> 4] > V[(opcode & 0x0F00) >> 8])
-                            V[0xF] = 0; // there is a borrow
-                        else
-                            V[0xF] = 1;
-                        V[(opcode & 0x0F00) >> 8] -= V[(opcode & 0x00F0) >> 4];
-                        pc += 2;
+                        {
+                            unsigned char xRegIndex = (opcode & 0x0F00) >> 8;
+                            unsigned char yRegIndex = (opcode & 0x00F0) >> 4;
+
+                            if(V[yRegIndex] > V[xRegIndex]){
+                                V[0xF] = 0;
+                            }else{
+                                V[0xF] = 1;
+                            }
+
+                            V[xRegIndex] -= V[yRegIndex];
+                            pc += 2;
+                        }
                         break;
 
                 case 0x0006: //Store the value of register VY shifted right one bit in register VX
@@ -360,17 +370,24 @@ void emulateCycle(){
                         break;
 
                 case 0x0007: //Set register VX to the value of VY minus VX
-                        if(V[(opcode & 0x0F00) >> 8] > V[(opcode & 0x00F0) >> 4])	// VY-VX
-                            V[0xF] = 0; // there is a borrow
-                        else
-                            V[0xF] = 1;
-                        V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] - V[(opcode & 0x0F00) >> 8];
-                        pc += 2;
+                        {
+                            unsigned char xRegIndex = (opcode & 0x0F00) >> 8;
+                            unsigned char yRegIndex = (opcode & 0x00F0) >> 4;
+
+                            if(V[xRegIndex] > V[yRegIndex]){
+                                V[0xF] = 0;
+                            }else{
+                                V[0xF] = 1;
+                            }
+
+                            V[xRegIndex] = V[yRegIndex] - V[xRegIndex];
+                            pc += 2;
+                        }
                     break;
 
                 case 0x000E: //Store the value of register VY shifted left one bit in register VX
-                    V[(opcode & 0X0F00) >> 8] = (V[(opcode & 0X00F0) >> 4] << 1);
-                    V[15] = (V[(opcode & 0X00F0) >> 4] & 0x80) >> 7; //Shift it to the bit 0 so it stores a 01 or 00, not 10000000...
+                    V[0xF] = V[(opcode & 0X0F00) >> 8] >> 7; 
+                    V[(opcode & 0X0F00) >> 8] <<=  1;
                     pc += 2;
                     break;
             }

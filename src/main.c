@@ -14,7 +14,7 @@
 
 /*
  TODO:
- - Check the mapping of the real keyboard to the chip8 keypad, i dont think its that well implmented
+ - Extract the nibbles of the opcode before the switch case to avoid code repetition
  */
 
 Config *globalConfig;

@@ -219,6 +219,13 @@ void simulateCpu(){
 void emulateCycle(){
     opcode = (memory[pc] << 8) | (memory[pc + 1]);
 
+    uint8_t xRegIndex = (opcode & 0x0F00) >> 8;
+    uint8_t yRegIndex = (opcode & 0x00F0) >> 4;
+
+    uint8_t n = (opcode & 0x000F); //low 4 bits
+    uint8_t nn = (opcode & 0x00FF); //low byte
+    uint16_t nnn = (opcode & 0x0FFF); //low 12 bits
+
     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Opcode: %04X\n", opcode);
 
     //DECODE
@@ -251,21 +258,21 @@ void emulateCycle(){
 
             break;
         case 0x1000: //jump to the address NNN
-            pc = opcode & 0x0FFF;
+            pc = nnn;
             break;
 
         case 0x2000: //calls subroutine at address NNN
             if(sp < 16){
                 stack[sp] = pc;
                 sp++; 
-                pc = opcode & 0x0FFF;
+                pc = nnn;
             }else{
                 SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: The stack pointer is greater than 15!\nCurrent value of sp: %d\n", sp);
             }
             break;
 
         case 0x3000:
-            if(V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF)){
+            if(V[xRegIndex] == nn){
                 SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of VX: %04X\n", V[(opcode & 0x0F00) >> 8]);
                 SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", (opcode & 0x00FF));
                 pc += 4;
@@ -275,7 +282,7 @@ void emulateCycle(){
             break;
 
         case 0x4000:
-            if(V[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF)){
+            if(V[xRegIndex] != nn){
                 pc += 4;
             }else{
                 pc += 2;
@@ -283,7 +290,7 @@ void emulateCycle(){
             break;
 
         case 0x5000:
-            if(V[(opcode & 0x0F00) >> 8] == V[(opcode & 0x00F0) >> 4]){
+            if(V[xRegIndex] == V[yRegIndex]){
                 pc += 4;
             }else{
                 pc += 2;
@@ -291,90 +298,82 @@ void emulateCycle(){
             break;
 
         case 0x6000:
-            V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
+            V[xRegIndex] = nn;
             pc += 2;
             break;
 
         case 0x7000:
-            V[(opcode & 0x0F00) >> 8] += opcode & 0x00FF;
+            V[xRegIndex] += nn;
             pc += 2;
             break;
 
         case 0x8000:
             switch(opcode & 0x000F){
                 case 0x0000: //store the value of VY on VX
-                    V[(opcode & 0X0F00) >> 8] = V[(opcode & 0X00F0) >> 4];
+                    V[xRegIndex] = V[yRegIndex];
                     pc += 2;
                     break;
 
                 case 0x0001: //Set VX to VX OR VY
-                    V[(opcode & 0X0F00) >> 8] |= V[(opcode & 0X00F0) >> 4];
+                    V[xRegIndex] |= V[yRegIndex];
                     pc += 2;
                     break;
 
                 case 0x0002: //Set VX to VX AND VY
-                    V[(opcode & 0X0F00) >> 8] &= V[(opcode & 0X00F0) >> 4];
+                    V[xRegIndex] &= V[yRegIndex];
                     pc += 2;
                     break;
 
                 case 0x0003: //Set VX to VX XOR VY
-                    V[(opcode & 0X0F00) >> 8] ^= V[(opcode & 0X00F0) >> 4];
+                    V[xRegIndex] ^= V[yRegIndex];
                     pc += 2;
                     break;
 
 
                 case 0x0004: //Add the value of register VY to register VX
-                    if(V[(opcode & 0x0F00) >> 8] + V[(opcode & 0x00F0) >> 4] > 0xFF){
+                    if(V[xRegIndex] + V[yRegIndex] > 0xFF){
                         V[0xF] = 1;
                     }else{
                         V[0xF] = 0;
                     }
-                    V[(opcode & 0x0F00) >> 8] += V[(opcode & 0x00F0) >> 4];
+
+                    V[xRegIndex] += V[yRegIndex];
                     pc += 2;
                     break;
 
                 case 0x0005: //Subtract the value of register VY from register VX
-                        {
-                            unsigned char xRegIndex = (opcode & 0x0F00) >> 8;
-                            unsigned char yRegIndex = (opcode & 0x00F0) >> 4;
+                    if(V[yRegIndex] > V[xRegIndex]){
+                        V[0xF] = 0;
+                    }else{
+                        V[0xF] = 1;
+                    }
 
-                            if(V[yRegIndex] > V[xRegIndex]){
-                                V[0xF] = 0;
-                            }else{
-                                V[0xF] = 1;
-                            }
-
-                            V[xRegIndex] -= V[yRegIndex];
-                            pc += 2;
-                            break;
-                        }
+                    V[xRegIndex] -= V[yRegIndex];
+                    pc += 2;
+                    break;
 
                 case 0x0006: //Store the value of register VY shifted right one bit in register VX
-                        V[0xF] = V[(opcode & 0x0F00) >> 8] & 0x1;
-                        V[(opcode & 0x0F00) >> 8] >>= 1;
-                        pc += 2;
-                        break;
+                    V[0xF] = V[xRegIndex] & 0x1;
+                    V[xRegIndex] >>= 1;
+                    pc += 2;
+                    break;
 
                 case 0x0007: //Set register VX to the value of VY minus VX
-                        {
-                            uint8_t xRegIndex = (opcode & 0x0F00) >> 8;
-                            uint8_t yRegIndex = (opcode & 0x00F0) >> 4;
+                    if(V[xRegIndex] > V[yRegIndex]){
+                        V[0xF] = 0;
+                    }else{
+                        V[0xF] = 1;
+                    }
 
-                            if(V[xRegIndex] > V[yRegIndex]){
-                                V[0xF] = 0;
-                            }else{
-                                V[0xF] = 1;
-                            }
-
-                            V[xRegIndex] = V[yRegIndex] - V[xRegIndex];
-                            pc += 2;
-                            break;
-                        }
+                    V[xRegIndex] = V[yRegIndex] - V[xRegIndex];
+                    pc += 2;
+                    break;
 
                 case 0x000E: //Store the value of register VY shifted left one bit in register VX
-                    V[0xF] = V[(opcode & 0X0F00) >> 8] >> 7; 
-                    V[(opcode & 0X0F00) >> 8] <<=  1;
+                    V[0xF] = V[xRegIndex] >> 7; 
+                    V[xRegIndex] <<=  1;
                     pc += 2;
+
                     break;
                 default:
                     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
@@ -382,7 +381,7 @@ void emulateCycle(){
             }
             break;
         case 0x9000:
-            if(V[(opcode & 0X0F00) >> 8] != V[(opcode & 0X00F0) >> 4]){
+            if(V[xRegIndex] != V[yRegIndex]){
                 pc += 4;
             }else{
                 pc += 2;
@@ -390,24 +389,24 @@ void emulateCycle(){
             break;
 
         case 0xA000:
-            I = opcode & 0x0FFF; 
+            I = nnn; 
             pc += 2;
             break;
 
         case 0xB000: //Jump to address NNN + V0
-            pc = (opcode & 0X0FFF) + V[0];
+            pc = nnn + V[0];
             break;
 
         case 0xC000://Set VX Random number with a mask of NN
-            V[(opcode & 0x0F00) >> 8] = generateRandomNN(opcode & 0x00FF);
+            V[xRegIndex] = generateRandomNN(nn);
             pc += 2;
             break;
 
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
             {
-                uint16_t x = V[(opcode & 0x0F00) >> 8];
-                uint16_t y = V[(opcode & 0x00F0) >> 4];
-                uint16_t height = opcode & 0x000F;
+                uint16_t x = V[xRegIndex];
+                uint16_t y = V[yRegIndex];
+                uint16_t height = n;
                 uint16_t pixel;
 
                 
@@ -433,7 +432,7 @@ void emulateCycle(){
         case 0xE000: 
             switch (opcode & 0x000F) {
                 case 0x000E: //Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
-                    if(keyPad[V[(opcode & 0x0F00) >> 8]] != 0){
+                    if(keyPad[V[xRegIndex]] != 0){
                         pc += 4;
                     }else{
                         pc += 2;
@@ -441,7 +440,7 @@ void emulateCycle(){
                     break;
 
                 case 0x0001://Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
-                    if(keyPad[V[(opcode & 0x0F00) >> 8]] == 0){
+                    if(keyPad[V[yRegIndex]] == 0){
                         pc += 4;
                     }else{
                         pc += 2;
@@ -457,7 +456,7 @@ void emulateCycle(){
         case 0xF000:
             switch (opcode & 0x00FF){
                 case 0x0007://Store the current value of the  delay timer in register VX
-                    V[(opcode & 0x0F00) >> 8] = delay_timer; 
+                    V[xRegIndex] = delay_timer; 
                     pc+= 2;
                     break;
 
@@ -466,7 +465,7 @@ void emulateCycle(){
                     bool pressed = false;
                     for (int i = 0; i < 16; i++) {
                         if (keyPad[i] == 0x1){
-                            V[(opcode & 0x0F00) >> 8] = i;      // Store key in Vx
+                            V[xRegIndex] = i;      // Store key in Vx
                             pressed = true;
                             break;
                         }
@@ -482,51 +481,51 @@ void emulateCycle(){
                 }
 
                 case 0x0015://Set the delay timer to the value of register VX
-                    delay_timer = V[(opcode & 0X0F00) >> 8]; 
+                    delay_timer = V[xRegIndex]; 
                     pc += 2;
                     break;
 
                 case 0x0018://Set the sound timer to the value of register VX
-                    sound_timer = V[(opcode & 0X0F00) >> 8]; 
+                    sound_timer = V[xRegIndex]; 
                     pc += 2;
                     break;
 
                 case 0x001E:
-                    if(I + V[(opcode & 0x0F00) >> 8] > 0xFFF){
+                    if(I + V[xRegIndex] > 0xFFF){
                         V[0xF] = 1;
                     }
                     else{
                         V[0xF] = 0;
                     }
-                    I += V[(opcode & 0x0F00) >> 8];
+                    I += V[xRegIndex];
                     pc += 2;
                     break;
 
                 case 0x0029://Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
-                    I = V[(opcode & 0x0F00) >> 8] * 0x5;
+                    I = V[xRegIndex] * 0x5;
                     pc+= 2;
                     break;
 
                 case 0x0033://Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
-                    memory[I] = V[(opcode & 0x0F00) >> 8] / 100;
-                    memory[I + 1] = (V[(opcode & 0x0F00) >> 8] / 10) % 10;
-                    memory[I + 2] = V[(opcode & 0x0F00) >> 8]  % 10;
+                    memory[I] = V[xRegIndex] / 100;
+                    memory[I + 1] = (V[xRegIndex] / 10) % 10;
+                    memory[I + 2] = V[xRegIndex]  % 10;
                     pc += 2;
                     break;
 
                     case 0x0055: //Store the values of registers V0 to VX inclusive in memory starting at address I. I is set to I + X + 1 after operation²
-                    for(int i = 0; i <= (opcode & 0x0F00) >> 8; i++){
+                    for(int i = 0; i <= xRegIndex; i++){
                         memory[I + i] = V[i];
                     }
-                    I += ((opcode & 0x0F00) >> 8) + 1;
+                    I += xRegIndex + 1;
                     pc+= 2;
                     break;
 
                 case 0x0065: //Fill registers V0 to VX inclusive with the values stored in memory starting at address I. I is set to I + X + 1 after operation²
-                    for(int i = 0; i <= ((opcode & 0x0F00) >> 8); i++){
+                    for(int i = 0; i <= xRegIndex; i++){
                         V[i] = memory[I + i];
                     }
-                    I += ((opcode & 0x0F00) >> 8) + 1;
+                    I += xRegIndex + 1;
                     pc+= 2;
                     break;
                 default:

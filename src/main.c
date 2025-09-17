@@ -33,12 +33,11 @@ int main(int argc, char **argv){
     signal(SIGINT, quit);
 
     globalConfig = readConfiguration("config/config.txt");
-    for(int i = 0; i < argc; i++){
-        if(strcmp(argv[i], "-DEBUG_OUTPUT") == 0){
-            SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Verbose output enabled\n");
-            globalConfig->debugOutput = true;
-        }
-    }
+    if(globalConfig == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error while trying to load the config file\n");
+        return -1;
+    } 
+
     if(argc > 1){
         setFileName(argv[1]);
     }else{

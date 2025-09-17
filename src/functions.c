@@ -13,7 +13,7 @@
 #include "../include/functions.h"
 #include "../include/config.h"
 
-extern unsigned char memory[4096]; //the total memory of the chip-8
+extern uint8_t memory[4096]; //the total memory of the chip-8
 extern Config *globalConfig;
 
 
@@ -24,7 +24,7 @@ unsigned char generateRandomNN(int mask){
 
 int drawScalatedPixel(int x, int y, SDL_Renderer *renderer, SDL_Color color){
     SDL_FRect drawRect = {x * globalConfig->scalingFactor, y * globalConfig->scalingFactor, globalConfig->scalingFactor, globalConfig->scalingFactor};
-    SDL_SetRenderDrawColor(renderer, color.r ,color.g, color.b, color.a); //All white
+    SDL_SetRenderDrawColor(renderer, color.r ,color.g, color.b, color.a); 
     SDL_RenderFillRect(renderer , &drawRect); 
     return 0;
 }

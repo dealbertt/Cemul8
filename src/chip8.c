@@ -226,6 +226,7 @@ void emulateCycle(){
         case 0x0000:
             switch(opcode & 0x0FFF){
                 case 0x00E0:
+
                     for(int i = 0; i < 2048; i++){
                         gpx[i] = 0x0;
                     }
@@ -280,6 +281,7 @@ void emulateCycle(){
                 pc += 2;
             }
             break;
+
         case 0x5000:
             if(V[(opcode & 0x0F00) >> 8] == V[(opcode & 0x00F0) >> 4]){
                 pc += 4;
@@ -355,8 +357,8 @@ void emulateCycle(){
 
                 case 0x0007: //Set register VX to the value of VY minus VX
                         {
-                            unsigned char xRegIndex = (opcode & 0x0F00) >> 8;
-                            unsigned char yRegIndex = (opcode & 0x00F0) >> 4;
+                            uint8_t xRegIndex = (opcode & 0x0F00) >> 8;
+                            uint8_t yRegIndex = (opcode & 0x00F0) >> 4;
 
                             if(V[xRegIndex] > V[yRegIndex]){
                                 V[0xF] = 0;
@@ -403,10 +405,10 @@ void emulateCycle(){
 
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
             {
-                unsigned short x = V[(opcode & 0x0F00) >> 8];
-                unsigned short y = V[(opcode & 0x00F0) >> 4];
-                unsigned short height = opcode & 0x000F;
-                unsigned short pixel;
+                uint16_t x = V[(opcode & 0x0F00) >> 8];
+                uint16_t y = V[(opcode & 0x00F0) >> 4];
+                uint16_t height = opcode & 0x000F;
+                uint16_t pixel;
 
                 
                 V[0xF] = 0;

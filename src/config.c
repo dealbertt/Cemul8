@@ -8,7 +8,7 @@ Config *readConfiguration(const char *path){
     FILE *ptr = fopen(path, "r");
     if(ptr == NULL){
         perror("Error while trying to open the config file");
-        exit(1);
+        return NULL;
     }
     Config *config = (Config *)malloc(sizeof(Config));
     char line[100];

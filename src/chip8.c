@@ -14,36 +14,36 @@
 #include <SDL3/SDL_log.h>
 
 #include "../include/chip8.h"
-#include "../include/functions.h"
 #include "../include/config.h"
+#include "../include/functions.h"
 
 
 //CHIP-8 specifications
-unsigned short opcode; //the operation code of the instruction
-unsigned char memory[MEMORY]; //the total memory of the chip-8
-unsigned char V[16]; //all the general purpose registers
+uint16_t opcode; //the operation code of the instruction
+uint8_t memory[MEMORY]; //the total memory of the chip-8
+uint8_t V[16]; //all the general purpose registers
 
-unsigned short I; //special register I for memory addresses
-unsigned short pc; //Program counter
+uint16_t I; //special register I for memory addresses
+uint16_t pc; //Program counter
 
 
-unsigned char gpx[SCREEN_WIDTH * SCREEN_HEIGHT]; //pixels of the screen. Total pixels in the array: 2048
+uint8_t gpx[SCREEN_WIDTH * SCREEN_HEIGHT]; //pixels of the screen. Total pixels in the array: 2048
                                                 //Keep in mind that this are the screens of the CHIP-8, but not of the actual screen that is showed, that is because the original resolution is way too small
 
-unsigned char delay_timer;
-unsigned char sound_timer;
+uint8_t delay_timer;
+uint8_t sound_timer;
 
 //STACK
-unsigned short stack[16];
-unsigned short sp; //stack pointer
-
-unsigned char keyPad[16];
+uint16_t stack[16];
+uint16_t sp; //stack pointer
+             //
+uint8_t keyPad[16];
 //I have no idea how to implement the pad, typeshit
 
 //Flag for indicating when the screen needs to be updated
 bool drawFlag = false;
 
-unsigned char chip8_fontset[80] =
+uint8_t chip8_fontset[80] =
 { 
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -214,7 +214,7 @@ void simulateCpu(){
                 emulateCycle();
                 if(drawFlag){
                     drawFlag = false;
-                    for (int i = 0; i < 2048; ++i) {
+                    for (int i = 0; i < (SCREEN_HEIGHT * SCREEN_WIDTH); ++i) {
                         uint8_t pixel = gpx[i];
                         pixels[i] = (0x00FFFFFF * pixel) | 0xFF000000;
                     }
@@ -263,7 +263,11 @@ void emulateCycle(){
                     }
                     pc += 2;
                     break;
+                default:
+                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
+                    exit(1);
             }
+
             break;
         case 0x1000: //jump to the address NNN
             pc = opcode & 0x0FFF;
@@ -360,8 +364,8 @@ void emulateCycle(){
 
                             V[xRegIndex] -= V[yRegIndex];
                             pc += 2;
+                            break;
                         }
-                        break;
 
                 case 0x0006: //Store the value of register VY shifted right one bit in register VX
                         V[0xF] = V[(opcode & 0x0F00) >> 8] & 0x1;
@@ -382,8 +386,8 @@ void emulateCycle(){
 
                             V[xRegIndex] = V[yRegIndex] - V[xRegIndex];
                             pc += 2;
+                            break;
                         }
-                    break;
 
                 case 0x000E: //Store the value of register VY shifted left one bit in register VX
                     V[0xF] = V[(opcode & 0X0F00) >> 8] >> 7; 
@@ -438,12 +442,12 @@ void emulateCycle(){
                 }
                 drawFlag = true;
                 pc += 2;
+                break;
             }
-            break;
         case 0xE000: 
             switch (opcode & 0x000F) {
                 case 0x000E: //Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
-                    if(keyPad[V[(opcode & 0x0F00) >> 8]] == 0x1){
+                    if(keyPad[V[(opcode & 0x0F00) >> 8]] != 0){
                         pc += 4;
                     }else{
                         pc += 2;
@@ -451,7 +455,7 @@ void emulateCycle(){
                     break;
 
                 case 0x0001://Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
-                    if(keyPad[V[(opcode & 0x0F00) >> 8]] == 0x0){
+                    if(keyPad[V[(opcode & 0x0F00) >> 8]] == 0){
                         pc += 4;
                     }else{
                         pc += 2;
@@ -484,8 +488,8 @@ void emulateCycle(){
                     }else{
                         pc += 2; // we go to the next
                     }
+                    break;
                 }
-                break;
 
                 case 0x0015://Set the delay timer to the value of register VX
                     delay_timer = V[(opcode & 0X0F00) >> 8]; 
@@ -521,7 +525,7 @@ void emulateCycle(){
                     break;
 
                     case 0x0055: //Store the values of registers V0 to VX inclusive in memory starting at address I. I is set to I + X + 1 after operation²
-                    for(int i = 0; i < (opcode & 0x0F00); i++){
+                    for(int i = 0; i <= (opcode & 0x0F00) >> 8; i++){
                         memory[I + i] = V[i];
                     }
                     I += ((opcode & 0x0F00) >> 8) + 1;
@@ -540,6 +544,7 @@ void emulateCycle(){
         default:
             SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
             pc += 2;
+            break;
     } 
 
 }

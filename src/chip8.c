@@ -97,24 +97,24 @@ void initialize(){
     sp = 0;     // Reset stack pointer
 
     // Clear the display
-    for (int i = 0; i < 2048; ++i) {
+    for (int i = 0; i < 2048; i++) {
         gpx[i] = 0;
     }
 
     // Clear the stack, keypad, and V registers
-    for (int i = 0; i < 16; ++i) {
+    for (int i = 0; i < 16; i++) {
         stack[i] = 0;
         keyPad[i] = 0;
         V[i] = 0;
     }
 
     // Clear memory
-    for (int i = 0; i < 4096; ++i) {
+    for (int i = 0; i < 4096; i++) {
         memory[i] = 0;
     }
 
     // Load font set into memory
-    for (int i = 0; i < 80; ++i) {
+    for (int i = 0; i < 80; i++) {
         memory[i] = chip8_fontset[i];
     }
 
@@ -156,82 +156,62 @@ int loadProgram(const char *fileName){
 }
 
 void simulateCpu(){
-    Uint64 frequency = SDL_GetPerformanceFrequency(); 
+      Uint64 frequency = SDL_GetPerformanceFrequency();
     Uint64 lastCycleTime = SDL_GetPerformanceCounter();
     Uint64 lastTimerTick = SDL_GetPerformanceCounter();
 
-    const double cpuCycleMs = 2.0;         // CPU cycle every 2 ms
-    const double timerIntervalMs = 1000.0 / 60.0; // 60 Hz timer -> ~16.67 ms
-
+    const double cpuCycleMs = 2.0;                 // CPU cycle every 2 ms
+    const double timerIntervalMs = 1000.0 / 60.0;  // 60 Hz timer
 
     uint32_t pixels[2048];
-    objects.start= true;
+    objects.start = true;
     objects.keepGoing = true;
 
-    while(objects.start){
+    while (objects.start) {
+        Uint64 now = SDL_GetPerformanceCounter();
+        double elapsedCycle = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
+        double elapsedTimer = ((double)(now - lastTimerTick) / (double)frequency) * 1000.0;
 
-        if(objects.keepGoing){
-            Uint64 now = SDL_GetPerformanceCounter();
-            double elapsedCycle = ((double)(now - lastCycleTime) / (double)frequency) * 1000;
-            double elapsedTimer = ((double)(now - lastTimerTick) / (double)frequency) * 1000.0;
-
-            if(elapsedCycle >= cpuCycleMs){
-                emulateCycle();
-                handleRealKeyboard();
-                lastCycleTime = now;
-            }else{
-            }
-
-            if(elapsedTimer >= timerIntervalMs) {
-                if(delay_timer > 0) delay_timer--;
-                if(sound_timer > 0) {
-                    sound_timer--;
-                    if(sound_timer == 0) {
-                        printf("Beep!\n"); // Or trigger actual sound
-                    }
-                }
-                lastTimerTick = now;
-            }
-
-            if(drawFlag){
-                drawFlag = false;
-                for (int i = 0; i < 2048; ++i) {
-                    uint8_t pixel = gpx[i];
-                    pixels[i] = (0x00FFFFFF * pixel) | 0xFF000000;
-                }
-                // Update SDL texture
-                SDL_UpdateTexture(objects.texture, NULL, pixels, 64 * sizeof(Uint32));
-                // Clear screen and render
-                SDL_RenderClear(objects.renderer);
-                SDL_RenderTexture(objects.renderer, objects.texture, NULL, NULL);
-                SDL_RenderPresent(objects.renderer);
-            }
-
-        }else{ //the execution is stopped
-            handleRealKeyboard();
-            if(objects.executeOnce){
-
-                emulateCycle();
-                if(drawFlag){
-                    drawFlag = false;
-                    for (int i = 0; i < (SCREEN_HEIGHT * SCREEN_WIDTH); ++i) {
-                        uint8_t pixel = gpx[i];
-                        pixels[i] = (0x00FFFFFF * pixel) | 0xFF000000;
-                    }
-                    // Update SDL texture
-                    SDL_UpdateTexture(objects.texture, NULL, pixels, 64 * sizeof(Uint32));
-                    // Clear screen and render
-                    SDL_RenderClear(objects.renderer);
-                    SDL_RenderTexture(objects.renderer, objects.texture, NULL, NULL);
-                    SDL_RenderPresent(objects.renderer);
-                }
-                objects.executeOnce = false;
-            }
-
+        // Handle CPU cycle
+        if (objects.keepGoing && elapsedCycle >= cpuCycleMs) {
+            emulateCycle();
+            lastCycleTime = now;
+        } else if (!objects.keepGoing && objects.executeOnce) {
+            emulateCycle();
+            objects.executeOnce = false;
+            lastCycleTime = now;
+        } else {
+            // Prevent busy-waiting
+            SDL_Delay(1);
         }
 
-    }
+        // Handle input every loop iteration
+        handleRealKeyboard();
 
+        // Handle timers
+        if (elapsedTimer >= timerIntervalMs) {
+            if (delay_timer > 0) delay_timer--;
+            if (sound_timer > 0) {
+                sound_timer--;
+                if (sound_timer == 0) {
+                    printf("Beep!\n");
+                }
+            }
+            lastTimerTick = now;
+        }
+
+        // Draw if needed
+        if (drawFlag) {
+            for (int i = 0; i < 2048; ++i) {
+                pixels[i] = gpx[i] ? 0xFFFFFFFF : 0xFF000000;
+            }
+            SDL_UpdateTexture(objects.texture, NULL, pixels, 64 * sizeof(Uint32));
+            SDL_RenderClear(objects.renderer);
+            SDL_RenderTexture(objects.renderer, objects.texture, NULL, NULL);
+            SDL_RenderPresent(objects.renderer);
+            drawFlag = false;
+        }
+    }
 }
 
 
@@ -265,7 +245,7 @@ void emulateCycle(){
                     break;
                 default:
                     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
-                    exit(1);
+                    break;
             }
 
             break;
@@ -394,7 +374,11 @@ void emulateCycle(){
                     V[(opcode & 0X0F00) >> 8] <<=  1;
                     pc += 2;
                     break;
+                default:
+                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
+                    break;
             }
+            break;
         case 0x9000:
             if(V[(opcode & 0X0F00) >> 8] != V[(opcode & 0X00F0) >> 4]){
                 pc += 4;
@@ -460,6 +444,10 @@ void emulateCycle(){
                     }else{
                         pc += 2;
                     }                         
+                    break;
+
+                default:
+                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
                     break;
             }
             break;
@@ -539,11 +527,14 @@ void emulateCycle(){
                     I += ((opcode & 0x0F00) >> 8) + 1;
                     pc+= 2;
                     break;
+                default:
+                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
+                    break;
             }
             break;
+
         default:
             SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
-            pc += 2;
             break;
     } 
 

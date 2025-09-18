@@ -232,8 +232,7 @@ void emulateCycle(){
     switch(opcode & 0xF000){        
         case 0x0000:
             switch(opcode & 0x0FFF){
-                case 0x00E0:
-
+                case 0x00E0: //Clear the screen
                     for(int i = 0; i < 2048; i++){
                         gpx[i] = 0x0;
                     }
@@ -242,7 +241,7 @@ void emulateCycle(){
                     pc += 2;
                     break;
                 
-                case 0x00EE:
+                case 0x00EE: //Return from a subroutine
                     if(sp > 0){
                         sp--; //Because we increased when pushing onto the stack to point to the next free slot, we now decrease to retreive the value that was pushed
                         pc = stack[sp];
@@ -271,17 +270,19 @@ void emulateCycle(){
             }
             break;
 
-        case 0x3000:
+        case 0x3000: //Skip the following instruction if the value of register VX equals NN
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
             if(V[xRegIndex] == nn){
-                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of VX: %04X\n", V[(opcode & 0x0F00) >> 8]);
-                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", (opcode & 0x00FF));
                 pc += 4;
             }else{
                 pc += 2;
             }
             break;
 
-        case 0x4000:
+        case 0x4000: //Skip the following instruction if the value of register VX is not equal to NN
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
             if(V[xRegIndex] != nn){
                 pc += 4;
             }else{
@@ -289,7 +290,9 @@ void emulateCycle(){
             }
             break;
 
-        case 0x5000:
+        case 0x5000: //Skip the following instruction if the value of register VX is equal to the value of register VY
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
             if(V[xRegIndex] == V[yRegIndex]){
                 pc += 4;
             }else{
@@ -297,12 +300,16 @@ void emulateCycle(){
             }
             break;
 
-        case 0x6000:
+        case 0x6000: //Store number NN in register VX
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
             V[xRegIndex] = nn;
             pc += 2;
             break;
 
-        case 0x7000:
+        case 0x7000: //Add the value NN to register VX
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
             V[xRegIndex] += nn;
             pc += 2;
             break;
@@ -310,44 +317,58 @@ void emulateCycle(){
         case 0x8000:
             switch(opcode & 0x000F){
                 case 0x0000: //store the value of VY on VX
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     V[xRegIndex] = V[yRegIndex];
                     pc += 2;
                     break;
 
                 case 0x0001: //Set VX to VX OR VY
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     V[xRegIndex] |= V[yRegIndex];
                     pc += 2;
                     break;
 
                 case 0x0002: //Set VX to VX AND VY
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     V[xRegIndex] &= V[yRegIndex];
                     pc += 2;
                     break;
 
                 case 0x0003: //Set VX to VX XOR VY
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     V[xRegIndex] ^= V[yRegIndex];
                     pc += 2;
                     break;
 
 
                 case 0x0004: //Add the value of register VY to register VX
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     if(V[xRegIndex] + V[yRegIndex] > 0xFF){
                         V[0xF] = 1;
                     }else{
                         V[0xF] = 0;
                     }
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0xF]: %04X\n", V[0xF]);
 
                     V[xRegIndex] += V[yRegIndex];
                     pc += 2;
                     break;
 
                 case 0x0005: //Subtract the value of register VY from register VX
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     if(V[yRegIndex] > V[xRegIndex]){
                         V[0xF] = 0;
                     }else{
                         V[0xF] = 1;
                     }
 
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0xF]: %04X\n", V[0xF]);
                     V[xRegIndex] -= V[yRegIndex];
                     pc += 2;
                     break;
@@ -356,31 +377,40 @@ void emulateCycle(){
                     V[0xF] = V[xRegIndex] & 0x1;
                     V[xRegIndex] >>= 1;
                     pc += 2;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0xF]: %04X\n", V[0xF]);
                     break;
 
                 case 0x0007: //Set register VX to the value of VY minus VX
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     if(V[xRegIndex] > V[yRegIndex]){
                         V[0xF] = 0;
                     }else{
                         V[0xF] = 1;
                     }
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0xF]: %04X\n", V[0xF]);
 
                     V[xRegIndex] = V[yRegIndex] - V[xRegIndex];
                     pc += 2;
                     break;
 
-                case 0x000E: //Store the value of register VY shifted left one bit in register VX
+                case 0x000e: //store the value of register vy shifted left one bit in register vx
                     V[0xF] = V[xRegIndex] >> 7; 
                     V[xRegIndex] <<=  1;
                     pc += 2;
 
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0xF]: %04X\n", V[0xF]);
                     break;
                 default:
                     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
                     break;
             }
             break;
-        case 0x9000:
+        case 0x9000://Skip the following instruction if the value of register VX is not equal to the value of register VY
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
             if(V[xRegIndex] != V[yRegIndex]){
                 pc += 4;
             }else{
@@ -388,18 +418,25 @@ void emulateCycle(){
             }
             break;
 
-        case 0xA000:
+        case 0xA000: //Store memory address NNN in register I
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of I: %04X\n", I);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NNN: %04X\n", nnn);
+
             I = nnn; 
             pc += 2;
             break;
 
         case 0xB000: //Jump to address NNN + V0
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0]: %04X\n", V[0]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NNN: %04X\n", nnn);
+
             pc = nnn + V[0];
             break;
 
         case 0xC000://Set VX Random number with a mask of NN
             V[xRegIndex] = generateRandomNN(nn);
             pc += 2;
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
             break;
 
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
@@ -432,6 +469,7 @@ void emulateCycle(){
         case 0xE000: 
             switch (opcode & 0x000F) {
                 case 0x000E: //Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
                     if(keyPad[V[xRegIndex]] != 0){
                         pc += 4;
                     }else{
@@ -440,7 +478,8 @@ void emulateCycle(){
                     break;
 
                 case 0x0001://Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
-                    if(keyPad[V[yRegIndex]] == 0){
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
+                    if(keyPad[V[xRegIndex]] == 0){
                         pc += 4;
                     }else{
                         pc += 2;
@@ -458,6 +497,7 @@ void emulateCycle(){
                 case 0x0007://Store the current value of the  delay timer in register VX
                     V[xRegIndex] = delay_timer; 
                     pc+= 2;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
                     break;
 
                 case 0x000A://Wait for a keypress and store the result in register VX
@@ -476,6 +516,7 @@ void emulateCycle(){
                         return;
                     }else{
                         pc += 2; // we go to the next
+                        SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
                     }
                     break;
                 }
@@ -483,14 +524,16 @@ void emulateCycle(){
                 case 0x0015://Set the delay timer to the value of register VX
                     delay_timer = V[xRegIndex]; 
                     pc += 2;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
                     break;
 
                 case 0x0018://Set the sound timer to the value of register VX
                     sound_timer = V[xRegIndex]; 
                     pc += 2;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
                     break;
 
-                case 0x001E:
+                case 0x001E: //Add the value stored in register VX to register I
                     if(I + V[xRegIndex] > 0xFFF){
                         V[0xF] = 1;
                     }
@@ -499,11 +542,14 @@ void emulateCycle(){
                     }
                     I += V[xRegIndex];
                     pc += 2;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of I: %04X\n", I);
                     break;
 
                 case 0x0029://Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
                     I = V[xRegIndex] * 0x5;
                     pc+= 2;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
                     break;
 
                 case 0x0033://Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
@@ -511,6 +557,10 @@ void emulateCycle(){
                     memory[I + 1] = (V[xRegIndex] / 10) % 10;
                     memory[I + 2] = V[xRegIndex]  % 10;
                     pc += 2;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of memory[I]: %04X\n", memory[I]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of memory[I + 1]: %04X\n", memory[I + 1]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of memory[I + 2]: %04X\n", memory[I + 2]);
                     break;
 
                     case 0x0055: //Store the values of registers V0 to VX inclusive in memory starting at address I. I is set to I + X + 1 after operation²

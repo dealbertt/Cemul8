@@ -17,5 +17,5 @@ make remake
 and then to run the emulator:  
 
 ```cmd
-./chip ROM.ch8 or ./chip ROM.c8
+./Cemul8 ROM.ch8 or ./Cemul8 ROM.c8
 ```

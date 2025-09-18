@@ -8,7 +8,7 @@ SRC = $(SRC_DIR)/main.c $(SRC_DIR)/chip8.c $(SRC_DIR)/functions.c $(SRC_DIR)/con
 OBJ_DIR = obj
 OBJ = $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
-TARGET = emul8 
+TARGET = Cemul8 
 
 $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) $(LDFLAGS)

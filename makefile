@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Werror -g -Iinclude $(shell pkg-config --cflags sdl3)
-LDFLAGS = $(shell pkg-config --libs sdl3)
+CFLAGS = -Wall -Werror -g -Iinclude $(shell pkg-config --cflags sdl3) -lSDL3_ttf
+LDFLAGS = $(shell pkg-config --libs sdl3 sdl3-ttf)
 
 
 SRC_DIR = src

@@ -6,7 +6,6 @@
 #define SCREEN_HEIGHT 32
 #define SCREEN_REFRESH_RATE 60 //for the moment
                                
-#include <stdbool.h>
 #include <SDL3/SDL.h>
 
 typedef struct{
@@ -15,7 +14,9 @@ typedef struct{
     bool executeOnce;
     SDL_Window *window;
     SDL_Renderer *renderer;
-    SDL_Texture *texture;
+    SDL_Texture *mainScreenTexture;
+    SDL_Texture *instructionTexture;
+
     char filename[150];
 }emulObjects;
 

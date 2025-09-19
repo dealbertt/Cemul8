@@ -8,6 +8,8 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_pixels.h>
 
+#include <SDL3_ttf/SDL_ttf.h>
+
 #include "../include/chip8.h"
 #include "../include/config.h"
 #include "../include/functions.h"
@@ -17,9 +19,9 @@
  - Extract the nibbles of the opcode before the switch case to avoid code repetition
  */
 
-Config *globalConfig;
+Config *globalConfig = NULL;
 
-emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .texture = NULL};
+emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL, .instructionTexture = NULL};
 
 
 
@@ -54,28 +56,37 @@ int main(int argc, char **argv){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error on SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
         return -1;
     }
-    objects.texture = SDL_CreateTexture(objects.renderer, 
+    objects.mainScreenTexture = SDL_CreateTexture(objects.renderer, 
             SDL_PIXELFORMAT_ARGB8888, 
-            SDL_TEXTUREACCESS_STREAMING, 
+            SDL_TEXTUREACCESS_TARGET, 
             SCREEN_WIDTH, SCREEN_HEIGHT);
-    if(objects.texture == NULL){
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when creating SDL_Texture\n");
+
+    if(objects.mainScreenTexture == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when creating mainScreenTexture\n");
         return -1;
     }
 
-    SDL_SetTextureScaleMode(objects.texture, SDL_SCALEMODE_NEAREST);
+    objects.instructionTexture = SDL_CreateTexture(objects.renderer, 
+            SDL_PIXELFORMAT_ARGB8888, 
+            SDL_TEXTUREACCESS_TARGET, 
+            SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    if(objects.instructionTexture == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when creating instructionTexture\n");
+        return -1;
+    }
+
+    SDL_SetTextureScaleMode(objects.mainScreenTexture, SDL_SCALEMODE_NEAREST);
+    SDL_SetTextureScaleMode(objects.instructionTexture, SDL_SCALEMODE_NEAREST);
 
 
-    //Snippet to test the screen
-    /*
-    SDL_RenderPresent(globalConfig.renderer);
-    updateScreen();
-    SDL_Delay(1000);
-    clearScreen();
-    SDL_Delay(1000);
-    */
 
-    initialize();
+    if(!TTF_Init()){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error with TTF_Init\n");
+        cleanup();
+    }
+
+    initialize(); //initializes all the chip-8 components
     if(loadProgram(objects.filename) == -1){
         cleanup();
     }

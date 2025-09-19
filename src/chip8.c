@@ -205,9 +205,22 @@ void simulateCpu(){
             for (int i = 0; i < 2048; ++i) {
                 pixels[i] = gpx[i] ? 0xFFFFFFFF : 0xFF000000;
             }
-            SDL_UpdateTexture(objects.texture, NULL, pixels, 64 * sizeof(Uint32));
+            SDL_FRect mainWindowRect = {(SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
+            SDL_UpdateTexture(objects.mainScreenTexture, NULL, pixels, 64 * sizeof(Uint32));
             SDL_RenderClear(objects.renderer);
-            SDL_RenderTexture(objects.renderer, objects.texture, NULL, NULL);
+
+
+            SDL_SetRenderTarget(objects.renderer, objects.instructionTexture);
+            SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255);
+
+            SDL_RenderClear(objects.renderer);
+            SDL_FRect testRect = {0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
+
+            SDL_RenderFillRect(objects.renderer, &testRect);
+            SDL_SetRenderTarget(objects.renderer, NULL);
+
+            SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
+            SDL_RenderTexture(objects.renderer, objects.instructionTexture, NULL, &testRect);
             SDL_RenderPresent(objects.renderer);
             drawFlag = false;
         }

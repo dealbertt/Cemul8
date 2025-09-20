@@ -17,6 +17,8 @@ typedef struct{
     SDL_Renderer *renderer;
     SDL_Texture *mainScreenTexture;
     SDL_Texture *instructionTexture;
+    SDL_Texture *instructionPanelTitle;
+    SDL_FRect titleRect;
     TTF_Font *font;
 
     char filename[150];

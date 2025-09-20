@@ -698,6 +698,7 @@ int renderFrame(){
     SDL_Texture *instructionTexture = createInstructionTexture();
     SDL_FRect instructionPanel = {0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
     SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionPanel);
+    SDL_DestroyTexture(instructionTexture);
 
     //Border for the instruction Panel
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
@@ -723,44 +724,41 @@ int renderFrame(){
     //Border for the chip8 screen
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
     SDL_RenderRect(objects.renderer, &mainWindowRect);
-    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); // white border
+    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
     SDL_RenderPresent(objects.renderer);
     return 0;
 }
 
 SDL_Texture *createInstructionTexture(){
-    SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2, (SCREEN_HEIGHT * globalConfig->scalingFactor));;
+    SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2, (SCREEN_HEIGHT * globalConfig->scalingFactor));
 
     SDL_SetRenderTarget(objects.renderer, targetTexture);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
     SDL_RenderClear(objects.renderer);
 
-    //TITLE OF THE TEXTURE
     SDL_Color color = {255, 255, 255, 255};
 
-    char title[15] = "INSTRUCTIONS";
+    //TITLE OF THE TEXTURE
+    SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.titleRect);
 
-    SDL_Surface *titleSurface = TTF_RenderText_Solid(objects.font, title, strlen(title), color);
-    SDL_Texture *titleTexture = SDL_CreateTextureFromSurface(objects.renderer, titleSurface);
-    SDL_DestroySurface(titleSurface);
-
-    SDL_FRect titleRect = {0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0, 100};
-    SDL_RenderTexture(objects.renderer, titleTexture, NULL, &titleRect);
-    SDL_DestroyTexture(titleTexture);
+    //Border of the title
 
     //THE ACTUAL INSTRUCTION BEING EXECUTED
-
     char instruction[10];
-    snprintf(instruction, sizeof(instruction)," > %04X", opcode);
+    snprintf(instruction, sizeof(instruction),"> %04X", opcode);
 
     SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects.font, instruction, strlen(instruction), color);
     SDL_Texture *instructionTexture = SDL_CreateTextureFromSurface(objects.renderer, instructionSurface);
     SDL_DestroySurface(instructionSurface);
 
-    SDL_FRect instructionRect = {0, titleRect.h + 5, 300, 300};
+    SDL_FRect instructionRect = {0, objects.titleRect.h + 5, 300, 300};
     SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionRect);
     SDL_DestroyTexture(instructionTexture);
+
+    SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
+    SDL_RenderRect(objects.renderer, &objects.titleRect);
+    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
     SDL_SetRenderTarget(objects.renderer, NULL);
     return targetTexture;

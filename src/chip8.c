@@ -699,6 +699,7 @@ int renderFrame(){
     SDL_FRect instructionPanel = {0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
     SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionPanel);
 
+    //Border for the instruction Panel
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
     SDL_RenderRect(objects.renderer, &instructionPanel);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); // white border
@@ -718,6 +719,11 @@ int renderFrame(){
     SDL_FRect mainWindowRect = {instructionPanel.w, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0};
 
     SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
+    
+    //Border for the chip8 screen
+    SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
+    SDL_RenderRect(objects.renderer, &mainWindowRect);
+    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); // white border
 
     SDL_RenderPresent(objects.renderer);
     return 0;
@@ -752,7 +758,7 @@ SDL_Texture *createInstructionTexture(){
     SDL_Texture *instructionTexture = SDL_CreateTextureFromSurface(objects.renderer, instructionSurface);
     SDL_DestroySurface(instructionSurface);
 
-    SDL_FRect instructionRect = {0, titleRect.h + 5, titleRect.w, (SCREEN_HEIGHT * globalConfig->scalingFactor) - titleRect.h};
+    SDL_FRect instructionRect = {0, titleRect.h + 5, 300, 300};
     SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionRect);
     SDL_DestroyTexture(instructionTexture);
 

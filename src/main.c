@@ -88,7 +88,7 @@ int main(int argc, char **argv){
     }
 
     char fontPath[40] = "fonts/FiraCodeNerdFont-Regular.ttf";
-    objects.font = TTF_OpenFont(fontPath, 24);
+    objects.font = TTF_OpenFont(fontPath, 42);
     if(objects.font == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to open the font: %s\n", SDL_GetError());
         cleanup();

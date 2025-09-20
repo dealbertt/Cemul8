@@ -1,3 +1,5 @@
+#include <SDL3/SDL_error.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
@@ -8,7 +10,6 @@
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_pixels.h>
 
-#include <SDL3_ttf/SDL_ttf.h>
 
 #include "../include/chip8.h"
 #include "../include/config.h"
@@ -62,7 +63,7 @@ int main(int argc, char **argv){
             SCREEN_WIDTH, SCREEN_HEIGHT);
 
     if(objects.mainScreenTexture == NULL){
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when creating mainScreenTexture\n");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when creating mainScreenTexture: %s\n", SDL_GetError());
         return -1;
     }
 
@@ -72,7 +73,7 @@ int main(int argc, char **argv){
             SCREEN_WIDTH, SCREEN_HEIGHT);
 
     if(objects.instructionTexture == NULL){
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when creating instructionTexture\n");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when creating instructionTexture: %s\n", SDL_GetError());
         return -1;
     }
 
@@ -82,7 +83,14 @@ int main(int argc, char **argv){
 
 
     if(!TTF_Init()){
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error with TTF_Init\n");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error with TTF_Init: %s\n", SDL_GetError());
+        cleanup();
+    }
+
+    char fontPath[40] = "fonts/FiraCodeNerdFont-Regular.ttf";
+    objects.font = TTF_OpenFont(fontPath, 12);
+    if(objects.font == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to open the font: %s\n", SDL_GetError());
         cleanup();
     }
 

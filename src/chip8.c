@@ -35,6 +35,8 @@ uint16_t pc; //Program counter
 uint8_t gpx[SCREEN_WIDTH * SCREEN_HEIGHT]; //pixels of the screen. Total pixels in the array: 2048
                                                 //Keep in mind that this are the screens of the CHIP-8, but not of the actual screen that is showed, that is because the original resolution is way too small
 
+char instructionDescription[25];
+
 uint8_t delay_timer;
 uint8_t sound_timer;
 
@@ -212,6 +214,10 @@ void simulateCpu(){
 void emulateCycle(){
     opcode = (memory[pc] << 8) | (memory[pc + 1]);
 
+    //empty the string
+    memset(instructionDescription, 0, sizeof(instructionDescription));
+
+    //EXtract the nibbles of the opcode
     uint8_t xRegIndex = (opcode & 0x0F00) >> 8;
     uint8_t yRegIndex = (opcode & 0x00F0) >> 4;
 
@@ -226,6 +232,8 @@ void emulateCycle(){
         case 0x0000:
             switch(opcode & 0x0FFF){
                 case 0x00E0: //Clear the screen
+                             //
+                    snprintf(instructionDescription, sizeof(instructionDescription), "CLEAR SCREEN");
                     for(int i = 0; i < 2048; i++){
                         gpx[i] = 0x0;
                     }
@@ -235,6 +243,7 @@ void emulateCycle(){
                     break;
                 
                 case 0x00EE: //Return from a subroutine
+                    snprintf(instructionDescription, sizeof(instructionDescription), "RETURN");
                     if(sp > 0){
                         sp--; //Because we increased when pushing onto the stack to point to the next free slot, we now decrease to retreive the value that was pushed
                         pc = stack[sp];
@@ -250,10 +259,12 @@ void emulateCycle(){
 
             break;
         case 0x1000: //jump to the address NNN
+            snprintf(instructionDescription, sizeof(instructionDescription), "JUMP 0x%03X", nnn);
             pc = nnn;
             break;
 
         case 0x2000: //calls subroutine at address NNN
+            snprintf(instructionDescription, sizeof(instructionDescription), "CALL 0x%03X", nnn);
             if(sp < 16){
                 stack[sp] = pc;
                 sp++; 
@@ -264,6 +275,8 @@ void emulateCycle(){
             break;
 
         case 0x3000: //Skip the following instruction if the value of register VX equals NN
+            snprintf(instructionDescription, sizeof(instructionDescription), "SKP V[%d] == 0x%02X", xRegIndex, nn);
+
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
             if(V[xRegIndex] == nn){
@@ -274,6 +287,8 @@ void emulateCycle(){
             break;
 
         case 0x4000: //Skip the following instruction if the value of register VX is not equal to NN
+            snprintf(instructionDescription, sizeof(instructionDescription), "SKP V[%d] != 0x%02X", xRegIndex, nn);
+
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
             if(V[xRegIndex] != nn){
@@ -284,6 +299,8 @@ void emulateCycle(){
             break;
 
         case 0x5000: //Skip the following instruction if the value of register VX is equal to the value of register VY
+            snprintf(instructionDescription, sizeof(instructionDescription), "SKP V[%d] != V[%d]", xRegIndex, yRegIndex);
+
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
             if(V[xRegIndex] == V[yRegIndex]){
@@ -294,6 +311,8 @@ void emulateCycle(){
             break;
 
         case 0x6000: //Store number NN in register VX
+            snprintf(instructionDescription, sizeof(instructionDescription), "STR 0x%02X -> V[%d]", nn, xRegIndex);
+
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
             V[xRegIndex] = nn;
@@ -301,6 +320,8 @@ void emulateCycle(){
             break;
 
         case 0x7000: //Add the value NN to register VX
+            snprintf(instructionDescription, sizeof(instructionDescription), "ADD 0x%02X -> V[%d]", nn, xRegIndex);
+
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
             V[xRegIndex] += nn;
@@ -310,6 +331,8 @@ void emulateCycle(){
         case 0x8000:
             switch(opcode & 0x000F){
                 case 0x0000: //store the value of VY on VX
+                    snprintf(instructionDescription, sizeof(instructionDescription), "ADD V[%d] -> V[%d]", yRegIndex, xRegIndex);
+
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     V[xRegIndex] = V[yRegIndex];
@@ -317,6 +340,8 @@ void emulateCycle(){
                     break;
 
                 case 0x0001: //Set VX to VX OR VY
+                    snprintf(instructionDescription, sizeof(instructionDescription), "V[%d] OR V[%d]", xRegIndex, yRegIndex);
+
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     V[xRegIndex] |= V[yRegIndex];
@@ -324,6 +349,8 @@ void emulateCycle(){
                     break;
 
                 case 0x0002: //Set VX to VX AND VY
+                    snprintf(instructionDescription, sizeof(instructionDescription), "V[%d] AND V[%d]", xRegIndex, yRegIndex);
+
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     V[xRegIndex] &= V[yRegIndex];
@@ -331,6 +358,8 @@ void emulateCycle(){
                     break;
 
                 case 0x0003: //Set VX to VX XOR VY
+                    snprintf(instructionDescription, sizeof(instructionDescription), "V[%d] XOR V[%d]", xRegIndex, yRegIndex);
+
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     V[xRegIndex] ^= V[yRegIndex];
@@ -339,6 +368,8 @@ void emulateCycle(){
 
 
                 case 0x0004: //Add the value of register VY to register VX
+                    snprintf(instructionDescription, sizeof(instructionDescription), "V[%d] += V[%d]", xRegIndex, yRegIndex);
+
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     if(V[xRegIndex] + V[yRegIndex] > 0xFF){
@@ -353,6 +384,8 @@ void emulateCycle(){
                     break;
 
                 case 0x0005: //Subtract the value of register VY from register VX
+                    snprintf(instructionDescription, sizeof(instructionDescription), "V[%d] -= V[%d]", xRegIndex, yRegIndex);
+
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     if(V[yRegIndex] > V[xRegIndex]){
@@ -367,6 +400,8 @@ void emulateCycle(){
                     break;
 
                 case 0x0006: //Store the value of register VY shifted right one bit in register VX
+                    snprintf(instructionDescription, sizeof(instructionDescription), "V[%d] >>= 1", xRegIndex);
+
                     V[0xF] = V[xRegIndex] & 0x1;
                     V[xRegIndex] >>= 1;
                     pc += 2;
@@ -375,6 +410,8 @@ void emulateCycle(){
                     break;
 
                 case 0x0007: //Set register VX to the value of VY minus VX
+                    snprintf(instructionDescription, sizeof(instructionDescription), "V[%d] - V[%d]", yRegIndex, xRegIndex);
+
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
                     if(V[xRegIndex] > V[yRegIndex]){
@@ -389,6 +426,8 @@ void emulateCycle(){
                     break;
 
                 case 0x000e: //store the value of register vy shifted left one bit in register vx
+                    snprintf(instructionDescription, sizeof(instructionDescription), "V[%d] <<= 1", xRegIndex);
+
                     V[0xF] = V[xRegIndex] >> 7; 
                     V[xRegIndex] <<=  1;
                     pc += 2;
@@ -402,6 +441,8 @@ void emulateCycle(){
             }
             break;
         case 0x9000://Skip the following instruction if the value of register VX is not equal to the value of register VY
+            snprintf(instructionDescription, sizeof(instructionDescription), "SKP V[%d] != V[%d]", xRegIndex, yRegIndex);
+
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
             if(V[xRegIndex] != V[yRegIndex]){
@@ -412,6 +453,7 @@ void emulateCycle(){
             break;
 
         case 0xA000: //Store memory address NNN in register I
+            snprintf(instructionDescription, sizeof(instructionDescription), "STR %04X -> I", xRegIndex);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of I: %04X\n", I);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NNN: %04X\n", nnn);
 
@@ -420,6 +462,7 @@ void emulateCycle(){
             break;
 
         case 0xB000: //Jump to address NNN + V0
+            snprintf(instructionDescription, sizeof(instructionDescription), "JMP %04X + V[0]", xRegIndex);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0]: %04X\n", V[0]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NNN: %04X\n", nnn);
 
@@ -427,6 +470,8 @@ void emulateCycle(){
             break;
 
         case 0xC000://Set VX Random number with a mask of NN
+            snprintf(instructionDescription, sizeof(instructionDescription), "SET V[%d]", xRegIndex);
+
             V[xRegIndex] = generateRandomNN(nn);
             pc += 2;
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
@@ -434,6 +479,8 @@ void emulateCycle(){
 
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
             {
+                snprintf(instructionDescription, sizeof(instructionDescription), "DRW V[%d], V[%d]", xRegIndex, yRegIndex);
+
                 uint16_t x = V[xRegIndex];
                 uint16_t y = V[yRegIndex];
                 uint16_t height = n;
@@ -462,6 +509,8 @@ void emulateCycle(){
         case 0xE000: 
             switch (opcode & 0x000F) {
                 case 0x000E: //Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
+                    snprintf(instructionDescription, sizeof(instructionDescription), "SKP V[%d]", xRegIndex);
+
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
                     if(keyPad[V[xRegIndex]] != 0){
                         pc += 4;
@@ -471,6 +520,8 @@ void emulateCycle(){
                     break;
 
                 case 0x0001://Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
+                    snprintf(instructionDescription, sizeof(instructionDescription), "SKP V[%d]", xRegIndex);
+
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
                     if(keyPad[V[xRegIndex]] == 0){
                         pc += 4;
@@ -488,6 +539,8 @@ void emulateCycle(){
         case 0xF000:
             switch (opcode & 0x00FF){
                 case 0x0007://Store the current value of the  delay timer in register VX
+                    snprintf(instructionDescription, sizeof(instructionDescription), "STR DLYTIM -> V[%d]", xRegIndex);
+
                     V[xRegIndex] = delay_timer; 
                     pc+= 2;
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
@@ -495,6 +548,8 @@ void emulateCycle(){
 
                 case 0x000A://Wait for a keypress and store the result in register VX
                 {
+                    snprintf(instructionDescription, sizeof(instructionDescription), "WAT V[%d]", xRegIndex);
+
                     bool pressed = false;
                     for (int i = 0; i < 16; i++) {
                         if (keyPad[i] == 0x1){
@@ -515,18 +570,24 @@ void emulateCycle(){
                 }
 
                 case 0x0015://Set the delay timer to the value of register VX
+                    snprintf(instructionDescription, sizeof(instructionDescription), "SET DLYTIM -> V[%d]", xRegIndex);
+
                     delay_timer = V[xRegIndex]; 
                     pc += 2;
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
                     break;
 
                 case 0x0018://Set the sound timer to the value of register VX
+                    snprintf(instructionDescription, sizeof(instructionDescription), "SET SNDTIM -> V[%d]", xRegIndex);
+
                     sound_timer = V[xRegIndex]; 
                     pc += 2;
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
                     break;
 
                 case 0x001E: //Add the value stored in register VX to register I
+                    snprintf(instructionDescription, sizeof(instructionDescription), "ADD I, V[%d]", xRegIndex);
+
                     if(I + V[xRegIndex] > 0xFFF){
                         V[0xF] = 1;
                     }
@@ -540,12 +601,16 @@ void emulateCycle(){
                     break;
 
                 case 0x0029://Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
+                    snprintf(instructionDescription, sizeof(instructionDescription), "SET I -> V[%d]", xRegIndex);
+
                     I = V[xRegIndex] * 0x5;
                     pc+= 2;
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
                     break;
 
                 case 0x0033://Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
+                    snprintf(instructionDescription, sizeof(instructionDescription), "STR V[%d]", xRegIndex);
+
                     memory[I] = V[xRegIndex] / 100;
                     memory[I + 1] = (V[xRegIndex] / 10) % 10;
                     memory[I + 2] = V[xRegIndex]  % 10;
@@ -557,6 +622,8 @@ void emulateCycle(){
                     break;
 
                     case 0x0055: //Store the values of registers V0 to VX inclusive in memory starting at address I. I is set to I + X + 1 after operation²
+                    snprintf(instructionDescription, sizeof(instructionDescription), "STR V[0] - V[%d]", xRegIndex);
+
                     for(int i = 0; i <= xRegIndex; i++){
                         memory[I + i] = V[i];
                     }
@@ -565,6 +632,8 @@ void emulateCycle(){
                     break;
 
                 case 0x0065: //Fill registers V0 to VX inclusive with the values stored in memory starting at address I. I is set to I + X + 1 after operation²
+                    snprintf(instructionDescription, sizeof(instructionDescription), "FLL V[0] - V[%d]", xRegIndex);
+
                     for(int i = 0; i <= xRegIndex; i++){
                         V[i] = memory[I + i];
                     }
@@ -726,6 +795,7 @@ int renderFrame(){
     SDL_RenderRect(objects.renderer, &mainWindowRect);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
+    //Border of the title
     SDL_SetRenderTarget(objects.renderer, instructionTexture);
 
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
@@ -733,6 +803,9 @@ int renderFrame(){
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
     SDL_SetRenderTarget(objects.renderer, NULL);
+
+
+
     SDL_RenderPresent(objects.renderer);
     return 0;
 }
@@ -749,7 +822,6 @@ SDL_Texture *createInstructionTexture(){
     //TITLE OF THE TEXTURE
     SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.titleRect);
 
-    //Border of the title
 
     //THE ACTUAL INSTRUCTION BEING EXECUTED
     char instruction[10];
@@ -759,10 +831,17 @@ SDL_Texture *createInstructionTexture(){
     SDL_Texture *instructionTexture = SDL_CreateTextureFromSurface(objects.renderer, instructionSurface);
     SDL_DestroySurface(instructionSurface);
 
-    SDL_FRect instructionRect = {0, objects.titleRect.h + 5, 300, 300};
+    SDL_FRect instructionRect = {0, objects.titleRect.h + 5, 300, 50};
     SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionRect);
     SDL_DestroyTexture(instructionTexture);
 
+    SDL_Surface *descriptionSurface = TTF_RenderText_Solid(objects.font, instructionDescription, strlen(instructionDescription), color);
+    SDL_Texture *descriptionTexture = SDL_CreateTextureFromSurface(objects.renderer, descriptionSurface);
+    SDL_DestroySurface(descriptionSurface);
+
+    SDL_FRect descriptionRect = {20, instructionRect.y + 50, 300, 50};
+    SDL_RenderTexture(objects.renderer, descriptionTexture, NULL, &descriptionRect);
+    SDL_DestroyTexture(descriptionTexture);
 
     SDL_SetRenderTarget(objects.renderer, NULL);
     return targetTexture;

@@ -15,9 +15,6 @@
 #include "../include/config.h"
 #include "../include/functions.h"
 
-/*
- TODO:
- */
 
 Config *globalConfig = NULL;
 
@@ -87,7 +84,7 @@ int main(int argc, char **argv){
     }
 
     char fontPath[40] = "fonts/FiraCodeNerdFont-Regular.ttf";
-    objects.font = TTF_OpenFont(fontPath, 42);
+    objects.font = TTF_OpenFont(fontPath, 40);
     if(objects.font == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to open the font: %s\n", SDL_GetError());
         cleanup();
@@ -96,7 +93,7 @@ int main(int argc, char **argv){
     SDL_Color color = {255, 255, 255, 255};
 
 
-    char title[15] = "INSTRUCTIONS";
+    char title[15] = " INSTRUCTIONS";
 
     SDL_Surface *titleSurface = TTF_RenderText_Solid(objects.font, title, strlen(title), color);
     objects.instructionPanelTitle = SDL_CreateTextureFromSurface(objects.renderer, titleSurface);

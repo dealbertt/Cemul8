@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <stdlib.h>
 
 #include <SDL3/SDL.h>
@@ -30,6 +30,7 @@ int drawScalatedPixel(int x, int y, SDL_Renderer *renderer, SDL_Color color){
 }
 void cleanup(){
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Quitting emul8...\n");
+    TTF_Quit();
     SDL_Quit();
     exit(0);
 }

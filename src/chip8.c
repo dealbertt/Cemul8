@@ -1,5 +1,8 @@
 #include <SDL3/SDL_error.h>
+#include <SDL3/SDL_oldnames.h>
+#include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_scancode.h>
+#include <SDL3/SDL_surface.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -692,24 +695,13 @@ void checkInternals(){
 
 int renderFrame(){
     SDL_RenderClear(objects.renderer);
-    SDL_Color color = {255, 255, 255, 255}; 
-    char currentInstruction[10];
-    snprintf(currentInstruction, sizeof(currentInstruction)," > %04X", opcode);
+    SDL_Texture *instructionTexture = createInstructionTexture();
+    SDL_FRect instructionPanel = {0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
+    SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionPanel);
 
-
-    SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
-    if(instructionSurface == NULL){
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to render instructionSurface: %s\n", SDL_GetError());
-        return -1;
-    }
-
-    SDL_FRect instructionRect  = {0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 3.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
-    SDL_Texture *instructionTexture = SDL_CreateTextureFromSurface(objects.renderer, instructionSurface);
-
-    SDL_DestroySurface(instructionSurface);
-
-    SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionRect);
-    SDL_DestroyTexture(instructionTexture);
+    SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
+    SDL_RenderRect(objects.renderer, &instructionPanel);
+    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); // white border
 
     uint32_t pixels[2048];
 
@@ -723,10 +715,47 @@ int renderFrame(){
         drawFlag = false;
     }
 
-    SDL_FRect mainWindowRect = {(SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
+    SDL_FRect mainWindowRect = {instructionPanel.w, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0};
 
     SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
 
     SDL_RenderPresent(objects.renderer);
     return 0;
+}
+
+SDL_Texture *createInstructionTexture(){
+    SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2, (SCREEN_HEIGHT * globalConfig->scalingFactor));;
+
+    SDL_SetRenderTarget(objects.renderer, targetTexture);
+    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
+    SDL_RenderClear(objects.renderer);
+
+    //TITLE OF THE TEXTURE
+    SDL_Color color = {255, 255, 255, 255};
+
+    char title[15] = "INSTRUCTIONS";
+
+    SDL_Surface *titleSurface = TTF_RenderText_Solid(objects.font, title, strlen(title), color);
+    SDL_Texture *titleTexture = SDL_CreateTextureFromSurface(objects.renderer, titleSurface);
+    SDL_DestroySurface(titleSurface);
+
+    SDL_FRect titleRect = {0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0, 100};
+    SDL_RenderTexture(objects.renderer, titleTexture, NULL, &titleRect);
+    SDL_DestroyTexture(titleTexture);
+
+    //THE ACTUAL INSTRUCTION BEING EXECUTED
+
+    char instruction[10];
+    snprintf(instruction, sizeof(instruction)," > %04X", opcode);
+
+    SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects.font, instruction, strlen(instruction), color);
+    SDL_Texture *instructionTexture = SDL_CreateTextureFromSurface(objects.renderer, instructionSurface);
+    SDL_DestroySurface(instructionSurface);
+
+    SDL_FRect instructionRect = {0, titleRect.h + 5, titleRect.w, (SCREEN_HEIGHT * globalConfig->scalingFactor) - titleRect.h};
+    SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionRect);
+    SDL_DestroyTexture(instructionTexture);
+
+    SDL_SetRenderTarget(objects.renderer, NULL);
+    return targetTexture;
 }

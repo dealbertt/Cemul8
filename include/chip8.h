@@ -53,4 +53,6 @@ void checkKeyPad();
 void checkInternals();
 
 int renderFrame();
+
+SDL_Texture *createInstructionTexture();
 #endif

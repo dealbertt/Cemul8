@@ -1,4 +1,6 @@
+#include <SDL3/SDL_error.h>
 #include <SDL3/SDL_scancode.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -163,7 +165,6 @@ void simulateCpu(){
     const double cpuCycleMs = 2.0;                 // CPU cycle every 2 ms
     const double timerIntervalMs = 1000.0 / 60.0;  // 60 Hz timer
 
-    uint32_t pixels[2048];
     objects.start = true;
     objects.keepGoing = true;
 
@@ -199,31 +200,7 @@ void simulateCpu(){
             }
             lastTimerTick = now;
         }
-
-        // Draw if needed
-        if (drawFlag) {
-            for (int i = 0; i < 2048; ++i) {
-                pixels[i] = gpx[i] ? 0xFFFFFFFF : 0xFF000000;
-            }
-            SDL_FRect mainWindowRect = {(SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
-            SDL_UpdateTexture(objects.mainScreenTexture, NULL, pixels, 64 * sizeof(Uint32));
-            SDL_RenderClear(objects.renderer);
-
-
-            SDL_SetRenderTarget(objects.renderer, objects.instructionTexture);
-            SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255);
-
-            SDL_RenderClear(objects.renderer);
-            SDL_FRect testRect = {0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
-
-            SDL_RenderFillRect(objects.renderer, &testRect);
-            SDL_SetRenderTarget(objects.renderer, NULL);
-
-            SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
-            SDL_RenderTexture(objects.renderer, objects.instructionTexture, NULL, &testRect);
-            SDL_RenderPresent(objects.renderer);
-            drawFlag = false;
-        }
+        renderFrame();
     }
 }
 
@@ -711,4 +688,45 @@ void checkInternals(){
     printf("sound_timer: %04X\n", sound_timer);
     printf("opcode: %04X\n", opcode);
     printf("-------------\n");
+}
+
+int renderFrame(){
+    SDL_RenderClear(objects.renderer);
+    SDL_Color color = {255, 255, 255, 255}; 
+    char currentInstruction[10];
+    snprintf(currentInstruction, sizeof(currentInstruction)," > %04X", opcode);
+
+
+    SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
+    if(instructionSurface == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to render instructionSurface: %s\n", SDL_GetError());
+        return -1;
+    }
+
+    SDL_FRect instructionRect  = {0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 3.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
+    SDL_Texture *instructionTexture = SDL_CreateTextureFromSurface(objects.renderer, instructionSurface);
+
+    SDL_DestroySurface(instructionSurface);
+
+    SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionRect);
+    SDL_DestroyTexture(instructionTexture);
+
+    uint32_t pixels[2048];
+
+    // Draw if needed
+    if (drawFlag) {
+        for (int i = 0; i < 2048; i++) {
+            pixels[i] = gpx[i] ? 0xFFFFFFFF : 0xFF000000;
+        }
+
+        SDL_UpdateTexture(objects.mainScreenTexture, NULL, pixels, 64 * sizeof(Uint32));
+        drawFlag = false;
+    }
+
+    SDL_FRect mainWindowRect = {(SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
+
+    SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
+
+    SDL_RenderPresent(objects.renderer);
+    return 0;
 }

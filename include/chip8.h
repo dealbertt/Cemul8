@@ -7,6 +7,7 @@
 #define SCREEN_REFRESH_RATE 60 //for the moment
                                
 #include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 typedef struct{
     bool start;
@@ -16,6 +17,7 @@ typedef struct{
     SDL_Renderer *renderer;
     SDL_Texture *mainScreenTexture;
     SDL_Texture *instructionTexture;
+    TTF_Font *font;
 
     char filename[150];
 }emulObjects;
@@ -49,4 +51,6 @@ void checkRegisters();
 void checkStack();
 void checkKeyPad();
 void checkInternals();
+
+int renderFrame();
 #endif

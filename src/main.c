@@ -17,7 +17,7 @@
 
 /*
  TODO:
- - Extract the nibbles of the opcode before the switch case to avoid code repetition
+ - Add NULL checks in the renderFrame function 
  */
 
 Config *globalConfig = NULL;

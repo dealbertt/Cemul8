@@ -726,6 +726,13 @@ int renderFrame(){
     SDL_RenderRect(objects.renderer, &mainWindowRect);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
+    SDL_SetRenderTarget(objects.renderer, instructionTexture);
+
+    SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
+    SDL_RenderRect(objects.renderer, &objects.titleRect);
+    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
+
+    SDL_SetRenderTarget(objects.renderer, NULL);
     SDL_RenderPresent(objects.renderer);
     return 0;
 }
@@ -756,9 +763,6 @@ SDL_Texture *createInstructionTexture(){
     SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionRect);
     SDL_DestroyTexture(instructionTexture);
 
-    SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
-    SDL_RenderRect(objects.renderer, &objects.titleRect);
-    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
     SDL_SetRenderTarget(objects.renderer, NULL);
     return targetTexture;

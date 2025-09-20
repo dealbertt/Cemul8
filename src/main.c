@@ -105,7 +105,7 @@ int main(int argc, char **argv){
 
     objects.titleRect.x = 0;
     objects.titleRect.y = 0;
-    objects.titleRect.w = (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0;
+    objects.titleRect.w = (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0 + 0.5;
     objects.titleRect.h = 100;
     SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.titleRect);
 

@@ -16,6 +16,11 @@
 #include "../include/functions.h"
 
 
+/*
+TODO:
+- Maybe separate the different rendering of the textures into different functions so that its not as messy as it is right now
+- Also have to think about moving some code to other files, because the text rendering and stuff shouldnt be in the chip8.c file
+ */
 Config *globalConfig = NULL;
 
 emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL, .instructionTexture = NULL, .instructionPanelTitle = NULL};
@@ -103,7 +108,7 @@ int main(int argc, char **argv){
     objects.titleRect.x = 0;
     objects.titleRect.y = 0;
     objects.titleRect.w = (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0 + 0.5;
-    objects.titleRect.h = 100;
+    objects.titleRect.h = 50;
     SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.titleRect);
 
                                                         

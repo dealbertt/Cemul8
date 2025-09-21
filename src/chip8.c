@@ -214,9 +214,11 @@ void simulateCpu(){
 void emulateCycle(){
     opcode = (memory[pc] << 8) | (memory[pc + 1]);
 
-    printf("Current instruction: %04X\n", opcode);
+    //printf("Current instruction: %04X\n", opcode);
     //printf("Future instruction to execute: %04X\n", (memory[pc + 1]))
     //empty the string
+
+    //Resetting the instructionDescription
     memset(instructionDescription, 0, sizeof(instructionDescription));
 
     //EXtract the nibbles of the opcode
@@ -346,6 +348,7 @@ void emulateCycle(){
 
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
+                    V[0xF] = 0;
                     V[xRegIndex] |= V[yRegIndex];
                     pc += 2;
                     break;
@@ -355,6 +358,7 @@ void emulateCycle(){
 
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
+                    V[0xF] = 0;
                     V[xRegIndex] &= V[yRegIndex];
                     pc += 2;
                     break;
@@ -364,6 +368,7 @@ void emulateCycle(){
 
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
+                    V[0xF] = 0;
                     V[xRegIndex] ^= V[yRegIndex];
                     pc += 2;
                     break;
@@ -405,6 +410,7 @@ void emulateCycle(){
                     snprintf(instructionDescription, sizeof(instructionDescription), "V[%d] >>= 1", xRegIndex);
 
                     V[0xF] = V[xRegIndex] & 0x1;
+                    V[xRegIndex] = V[yRegIndex];
                     V[xRegIndex] >>= 1;
                     pc += 2;
                     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
@@ -431,6 +437,7 @@ void emulateCycle(){
                     snprintf(instructionDescription, sizeof(instructionDescription), "V[%d] <<= 1", xRegIndex);
 
                     V[0xF] = V[xRegIndex] >> 7; 
+                    V[xRegIndex] = V[yRegIndex];
                     V[xRegIndex] <<=  1;
                     pc += 2;
 
@@ -480,30 +487,35 @@ void emulateCycle(){
             break;
 
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
+            
             {
                 snprintf(instructionDescription, sizeof(instructionDescription), "DRW V[%d], V[%d]", xRegIndex, yRegIndex);
 
-                uint16_t x = V[xRegIndex];
-                uint16_t y = V[yRegIndex];
+                uint16_t x = V[xRegIndex] & 63;
+                uint16_t y = V[yRegIndex] & 31;
                 uint16_t height = n;
-                uint16_t pixel;
 
-                
+
                 V[0xF] = 0;
                 for (int yline = 0; yline < height; yline++)
                 {
-                    pixel = memory[I + yline];
+                    uint16_t pixel = memory[I + yline];
                     for(int xline = 0; xline < 8; xline++)
                     {
                         if((pixel & (0x80 >> xline)) != 0)
                         {
-                            if(gpx[(x + xline + ((y + yline) * 64))] == 1)
-                                V[0xF] = 1;                                 
+                            int X = (x + xline) % 64;
+                            int Y = (y + yline) % 32;
+                            int idx = X  + (Y * 64);
 
-                            gpx[x + xline + ((y + yline) * 64)] ^= 1;
+                            if(gpx[idx] == 1)
+                                V[0xF] = 1;
+
+                            gpx[idx] ^= 1;
                         }
                     }
                 }
+
                 drawFlag = true;
                 pc += 2;
                 break;

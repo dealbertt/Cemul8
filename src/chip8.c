@@ -214,6 +214,8 @@ void simulateCpu(){
 void emulateCycle(){
     opcode = (memory[pc] << 8) | (memory[pc + 1]);
 
+    printf("Current instruction: %04X\n", opcode);
+    //printf("Future instruction to execute: %04X\n", (memory[pc + 1]))
     //empty the string
     memset(instructionDescription, 0, sizeof(instructionDescription));
 
@@ -839,7 +841,7 @@ SDL_Texture *createInstructionTexture(){
     SDL_Texture *descriptionTexture = SDL_CreateTextureFromSurface(objects.renderer, descriptionSurface);
     SDL_DestroySurface(descriptionSurface);
 
-    SDL_FRect descriptionRect = {20, instructionRect.y + 50, 300, 50};
+    SDL_FRect descriptionRect = {20, instructionRect.y + 50, 500, 50};
     SDL_RenderTexture(objects.renderer, descriptionTexture, NULL, &descriptionRect);
     SDL_DestroyTexture(descriptionTexture);
 

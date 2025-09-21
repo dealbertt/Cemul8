@@ -19,7 +19,10 @@
 /*
 TODO:
 - Maybe separate the different rendering of the textures into different functions so that its not as messy as it is right now
+
 - Also have to think about moving some code to other files, because the text rendering and stuff shouldnt be in the chip8.c file
+
+- Also have to implement audio at some point (f*ck)
  */
 Config *globalConfig = NULL;
 

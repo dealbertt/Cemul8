@@ -36,7 +36,6 @@ int setFileName(const char *argName);
 int main(int argc, char **argv){
     signal(SIGTERM, quit);
     signal(SIGQUIT, quit);
-    signal(SIGKILL, quit);
     signal(SIGINT, quit);
 
     globalConfig = readConfiguration("config/config.txt");

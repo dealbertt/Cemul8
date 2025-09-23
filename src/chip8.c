@@ -859,7 +859,6 @@ SDL_Texture *createInstructionTexture(){
 
     //TITLE OF THE TEXTURE
     //this uses the objects.instructionPanelTitle which is already created, just needs to be rendered every frame aswell
-    SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.titleRect);
 
 
 
@@ -926,6 +925,7 @@ SDL_Texture *display10Instructions(){
         SDL_RenderTexture(objects.renderer, currentInstructionTexture, NULL, &rect);
         SDL_DestroyTexture(currentInstructionTexture);
     }
+    SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.titleRect);
     SDL_SetRenderTarget(objects.renderer, NULL);
 
     return targetTexture;

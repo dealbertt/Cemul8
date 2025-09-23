@@ -24,7 +24,12 @@ TODO:
 
 - Also have to implement audio at some point (f*ck)
 - Im sure there is a much better way of actually rendering all those instructions, but for now, it gets the job done, need to maybe create a small font to properly fit all 20 instructions
+
+- Oh yeah and maybe fix the wrapping qirk
+
+
  */
+
 Config *globalConfig = NULL;
 
 emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL,  .instructionPanelTitle = NULL};

@@ -1,9 +1,3 @@
-#include <SDL3/SDL_error.h>
-#include <SDL3/SDL_oldnames.h>
-#include <SDL3/SDL_pixels.h>
-#include <SDL3/SDL_scancode.h>
-#include <SDL3/SDL_surface.h>
-#include <SDL3_ttf/SDL_ttf.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +11,12 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_oldnames.h>
+#include <SDL3/SDL_pixels.h>
+#include <SDL3/SDL_scancode.h>
+#include <SDL3/SDL_surface.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 #include "../include/chip8.h"
 #include "../include/config.h"
@@ -228,6 +228,9 @@ void emulateCycle(){
     uint8_t n = (opcode & 0x000F); //low 4 bits
     uint8_t nn = (opcode & 0x00FF); //low byte
     uint16_t nnn = (opcode & 0x0FFF); //low 12 bits
+
+    uint8_t x = V[xRegIndex];
+    uint8_t y = V[yRegIndex]; 
 
     SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Opcode: %04X\n", opcode);
 
@@ -479,29 +482,60 @@ void emulateCycle(){
             {
                 snprintf(instructionDescription, sizeof(instructionDescription), "DRW V[%d], V[%d]", xRegIndex, yRegIndex);
 
-                uint16_t x = V[xRegIndex] & 63;
-                uint16_t y = V[yRegIndex] & 31;
-                uint16_t height = n;
+                uint8_t startX = x;
+                uint8_t startY = y;
+                uint8_t height = n;
+                static bool test = false;
 
 
                 V[0xF] = 0;
                 for (int yline = 0; yline < height; yline++)
                 {
-                    uint16_t pixel = memory[I + yline];
+                    uint8_t pixel = memory[I + yline];
                     for(int xline = 0; xline < 8; xline++)
                     {
-                        if((pixel & (0x80 >> xline)) != 0)
+                        bool pixelOn = (pixel >> (7 - xline)) & 1;
+                        if(pixelOn)
                         {
-                            int X = (x + xline) % 64;
-                            int Y = (y + yline) % 32;
-                            int idx = X  + (Y * 64);
+                            int X = (startX + xline) % 64;
+                            int Y = (startY + yline) % 32;
+                            int idx = (Y * 64) + X;
 
-                            if(gpx[idx] == 1)
-                                V[0xF] = 1;
+                            //If even after wrapping, the coordinates are within bounds, we draw, otherwise we dont
+                            if(X >= 0 && X < 64 && Y >= 0 && Y < 32){
+                                if(gpx[idx]){
+                                    V[0xF] = 1;
+                                }
 
-                            gpx[idx] ^= 1;
+                                gpx[idx] ^= 1;
+                            }
+
                         }
                     }
+                }
+                if(x == 110 && y == 50){
+                    printf("TEST STARTED\n");
+                    test = true;
+                }
+
+                if((startX == 46 && startY == 18) || (startX == 28 && startY == 29) || (startX == 22 && startY == 2) || (startX == 34 && startY == 10)){
+                    printf("WARNING! SPECIAL VALUE!\n");
+                }
+                printf("Drawing at X: %d and Y: %d\n", startX, startY);
+                if(test){
+                    printf("V[0]: %d\n", V[0]);
+                    printf("V[1]: %d\n", V[1]);
+                    printf("V[F]: %d\n", V[0xF]);
+                    printf("V[9]: %d\n", V[9]);
+                }
+
+                if(V[9] == 4){
+                    printf("Test passed!");
+                }
+
+                if(x == 40 && y == 23 && test == true){
+                    printf("TEST STOPPED\n");
+                    test = false;
                 }
 
                 drawFlag = true;
@@ -756,21 +790,28 @@ void checkInternals(){
     printf("-------------\n");
 }
 
+//function in charge or rendering the entire screen (overlay + CHIP-8 screen)
 int renderFrame(){
     SDL_RenderClear(objects.renderer);
-    SDL_Texture *instructionTexture = createInstructionTexture();
-    SDL_FRect instructionPanel = {0, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0, (SCREEN_HEIGHT * globalConfig->scalingFactor)};
-    SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionPanel);
+
+    //The entire instruction panel
+    SDL_Texture *instructionTexture = display10Instructions();
+
+    SDL_FRect instructionPanelRect = {0
+        , 0
+        , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
+        , (SCREEN_HEIGHT * globalConfig->scalingFactor)};
+
+    SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionPanelRect);
     SDL_DestroyTexture(instructionTexture);
 
     //Border for the instruction Panel
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
-    SDL_RenderRect(objects.renderer, &instructionPanel);
+    SDL_RenderRect(objects.renderer, &instructionPanelRect);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); // white border
 
+    //update the CHIP-8 screen if needed
     uint32_t pixels[2048];
-
-    // Draw if needed
     if (drawFlag) {
         for (int i = 0; i < 2048; i++) {
             pixels[i] = gpx[i] ? 0xFFFFFFFF : 0xFF000000;
@@ -780,7 +821,8 @@ int renderFrame(){
         drawFlag = false;
     }
 
-    SDL_FRect mainWindowRect = {instructionPanel.w, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0};
+    //Rendering the chip-8 screen
+    SDL_FRect mainWindowRect = {instructionPanelRect.w, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0};
 
     SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
     
@@ -798,14 +840,16 @@ int renderFrame(){
 
     SDL_SetRenderTarget(objects.renderer, NULL);
 
-
-
     SDL_RenderPresent(objects.renderer);
     return 0;
 }
 
 SDL_Texture *createInstructionTexture(){
-    SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2, (SCREEN_HEIGHT * globalConfig->scalingFactor));
+    SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer
+            , SDL_PIXELFORMAT_RGBA8888
+            , SDL_TEXTUREACCESS_TARGET
+            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4
+            , (SCREEN_HEIGHT * globalConfig->scalingFactor));
 
     SDL_SetRenderTarget(objects.renderer, targetTexture);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
@@ -814,7 +858,9 @@ SDL_Texture *createInstructionTexture(){
     SDL_Color color = {255, 255, 255, 255};
 
     //TITLE OF THE TEXTURE
+    //this uses the objects.instructionPanelTitle which is already created, just needs to be rendered every frame aswell
     SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.titleRect);
+
 
 
     //THE ACTUAL INSTRUCTION BEING EXECUTED
@@ -829,6 +875,10 @@ SDL_Texture *createInstructionTexture(){
     SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionRect);
     SDL_DestroyTexture(instructionTexture);
 
+
+
+    //Description of the instruction
+    /*
     SDL_Surface *descriptionSurface = TTF_RenderText_Solid(objects.font, instructionDescription, strlen(instructionDescription), color);
     SDL_Texture *descriptionTexture = SDL_CreateTextureFromSurface(objects.renderer, descriptionSurface);
     SDL_DestroySurface(descriptionSurface);
@@ -836,7 +886,47 @@ SDL_Texture *createInstructionTexture(){
     SDL_FRect descriptionRect = {20, instructionRect.y + 50, 500, 50};
     SDL_RenderTexture(objects.renderer, descriptionTexture, NULL, &descriptionRect);
     SDL_DestroyTexture(descriptionTexture);
+    */
 
     SDL_SetRenderTarget(objects.renderer, NULL);
+    return targetTexture;
+
+}
+
+SDL_Texture *display10Instructions(){
+
+    //the entire instruction panel texture
+    SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer
+            , SDL_PIXELFORMAT_RGBA8888
+            , SDL_TEXTUREACCESS_TARGET
+            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4
+            , (SCREEN_HEIGHT * globalConfig->scalingFactor));
+
+    SDL_SetRenderTarget(objects.renderer, targetTexture);
+    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
+    SDL_RenderClear(objects.renderer);
+
+    int lineHeight = TTF_GetFontLineSkip(objects.font);
+    char currentInstruction[25];
+    SDL_Color color = {255, 255, 255, 255};
+    int y = 100;
+
+    for(int i = 0; i < 10; i++){
+        uint16_t currentOpcode = (memory[pc + i] << 8) | (memory[pc + i + 1]);
+        memset(currentInstruction, 0, sizeof(currentInstruction));
+        snprintf(currentInstruction, sizeof(currentInstruction), "0x%04X: %04X", pc + i, currentOpcode);
+
+        //Rendered the text of one instruction
+        SDL_Surface *surface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
+        SDL_Texture *currentInstructionTexture = SDL_CreateTextureFromSurface(objects.renderer, surface);
+        SDL_DestroySurface(surface);
+        SDL_FRect rect = {0, y, (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0, 100};
+        y += lineHeight + 10;
+
+        SDL_RenderTexture(objects.renderer, currentInstructionTexture, NULL, &rect);
+        SDL_DestroyTexture(currentInstructionTexture);
+    }
+    SDL_SetRenderTarget(objects.renderer, NULL);
+
     return targetTexture;
 }

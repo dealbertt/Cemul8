@@ -16,7 +16,6 @@ typedef struct{
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *mainScreenTexture;
-    SDL_Texture *instructionTexture;
     SDL_Texture *instructionPanelTitle;
     SDL_FRect titleRect;
     TTF_Font *font;
@@ -57,4 +56,6 @@ void checkInternals();
 int renderFrame();
 
 SDL_Texture *createInstructionTexture();
+
+SDL_Texture *display10Instructions();
 #endif

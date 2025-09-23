@@ -908,9 +908,9 @@ SDL_Texture *display10Instructions(){
     int lineHeight = TTF_GetFontLineSkip(objects.font);
     char currentInstruction[25];
     SDL_Color color = {255, 255, 255, 255};
-    int y = 100;
+    int y = objects.titleRect.h;
 
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < 20; i++){
         uint16_t currentOpcode = (memory[pc + i] << 8) | (memory[pc + i + 1]);
         memset(currentInstruction, 0, sizeof(currentInstruction));
         snprintf(currentInstruction, sizeof(currentInstruction), "0x%04X: %04X", pc + i, currentOpcode);
@@ -919,8 +919,8 @@ SDL_Texture *display10Instructions(){
         SDL_Surface *surface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
         SDL_Texture *currentInstructionTexture = SDL_CreateTextureFromSurface(objects.renderer, surface);
         SDL_DestroySurface(surface);
-        SDL_FRect rect = {0, y, (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0, 100};
-        y += lineHeight + 10;
+        SDL_FRect rect = {0, y, (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0, 50};
+        y += lineHeight;
 
         SDL_RenderTexture(objects.renderer, currentInstructionTexture, NULL, &rect);
         SDL_DestroyTexture(currentInstructionTexture);

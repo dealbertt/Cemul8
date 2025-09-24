@@ -55,7 +55,6 @@ void checkInternals();
 
 int renderFrame();
 
-SDL_Texture *createInstructionTexture();
-
 SDL_Texture *display10Instructions();
+char *getLongerInstruction(uint16_t currentOpcode);
 #endif

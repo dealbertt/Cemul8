@@ -844,53 +844,6 @@ int renderFrame(){
     return 0;
 }
 
-SDL_Texture *createInstructionTexture(){
-    SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer
-            , SDL_PIXELFORMAT_RGBA8888
-            , SDL_TEXTUREACCESS_TARGET
-            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4
-            , (SCREEN_HEIGHT * globalConfig->scalingFactor));
-
-    SDL_SetRenderTarget(objects.renderer, targetTexture);
-    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
-    SDL_RenderClear(objects.renderer);
-
-    SDL_Color color = {255, 255, 255, 255};
-
-    //TITLE OF THE TEXTURE
-    //this uses the objects.instructionPanelTitle which is already created, just needs to be rendered every frame aswell
-
-
-
-    //THE ACTUAL INSTRUCTION BEING EXECUTED
-    char instruction[10];
-    snprintf(instruction, sizeof(instruction),"> %04X", opcode);
-
-    SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects.font, instruction, strlen(instruction), color);
-    SDL_Texture *instructionTexture = SDL_CreateTextureFromSurface(objects.renderer, instructionSurface);
-    SDL_DestroySurface(instructionSurface);
-
-    SDL_FRect instructionRect = {0, objects.titleRect.h + 5, 300, 50};
-    SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionRect);
-    SDL_DestroyTexture(instructionTexture);
-
-
-
-    //Description of the instruction
-    /*
-    SDL_Surface *descriptionSurface = TTF_RenderText_Solid(objects.font, instructionDescription, strlen(instructionDescription), color);
-    SDL_Texture *descriptionTexture = SDL_CreateTextureFromSurface(objects.renderer, descriptionSurface);
-    SDL_DestroySurface(descriptionSurface);
-
-    SDL_FRect descriptionRect = {20, instructionRect.y + 50, 500, 50};
-    SDL_RenderTexture(objects.renderer, descriptionTexture, NULL, &descriptionRect);
-    SDL_DestroyTexture(descriptionTexture);
-    */
-
-    SDL_SetRenderTarget(objects.renderer, NULL);
-    return targetTexture;
-
-}
 
 SDL_Texture *display10Instructions(){
 
@@ -906,14 +859,13 @@ SDL_Texture *display10Instructions(){
     SDL_RenderClear(objects.renderer);
 
     int lineHeight = TTF_GetFontLineSkip(objects.font);
-    char currentInstruction[25];
+    char *currentInstruction;
     SDL_Color color = {255, 255, 255, 255};
     int y = objects.titleRect.h;
 
-    for(int i = 0; i < 20; i += 2){
+    for(int i = 0; i < 40; i+= 2){
         uint16_t currentOpcode = (memory[pc + i] << 8) | (memory[pc + i + 1]);
-        memset(currentInstruction, 0, sizeof(currentInstruction));
-        snprintf(currentInstruction, sizeof(currentInstruction), "0x%04X: %04X", pc + i, currentOpcode);
+        currentInstruction = getLongerInstruction(currentOpcode);
 
         //Rendered the text of one instruction
         SDL_Surface *surface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
@@ -925,6 +877,7 @@ SDL_Texture *display10Instructions(){
         SDL_RenderTexture(objects.renderer, currentInstructionTexture, NULL, &rect);
 
         SDL_DestroyTexture(currentInstructionTexture);
+        free(currentInstruction);
 
         y += lineHeight;
     }
@@ -934,3 +887,76 @@ SDL_Texture *display10Instructions(){
 
     return targetTexture;
 }
+
+char *getLongerInstruction(uint16_t currentOpcode){
+    char *message = malloc(45);
+    switch(currentOpcode & 0xF000){
+        case 0x0000:
+            switch(currentOpcode & 0x0F00){
+                case 0x00E0:
+                    snprintf(message, 45, "CLR SCRN");
+                    break;
+
+                case 0x00EE:
+                    snprintf(message, 45, "RET");
+                    break;
+                default:
+                    break;
+            }
+            break;
+
+        case 0x1000:
+            snprintf(message, 45, "JMP 0x%04X", currentOpcode & 0x0FFF);
+            break;
+
+        case 0x2000:
+            snprintf(message, 45, "EXEC ADDR 0x%04X", currentOpcode & 0x0FFF);
+            break;
+
+        case 0x3000:
+        case 0x4000:
+            snprintf(message, 45, "SKP V[%d] 0x%04X", currentOpcode & 0x0F00, currentOpcode & 0x0FFF);
+            break;
+
+        case 0x5000:
+            snprintf(message, 45, "SKP V[%d] V[%d]", currentOpcode & 0x0F00, currentOpcode & 0x00F0);
+            break;
+
+        case 0x6000:
+            snprintf(message, 45, "STR  0x%04X V[%d]", currentOpcode & 0x00FF, currentOpcode & 0x0F00);
+            break;
+
+        case 0x7000:
+            snprintf(message, 45, "ADD 0x%04X V[%d]", currentOpcode & 0x00FF, currentOpcode & 0x0F00);
+            break;
+
+        case 0x8000:
+            switch(currentOpcode & 0x000F){
+                case 0x0000:
+                    snprintf(message, 45, "STR V[%d] V[%d]", currentOpcode & 0x00F0, currentOpcode & 0x0F00);
+                    break;
+
+                case 0x0001:
+                    snprintf(message, 45, " V[%d] OR V[%d]", currentOpcode & 0x0F00, currentOpcode & 0x00F0);
+                    break;
+
+                case 0x0002:
+                    snprintf(message, 45, " V[%d] AND V[%d]", currentOpcode & 0x0F00, currentOpcode & 0x00F0);
+                    break;
+
+                case 0x0003:
+                    snprintf(message, 45, " V[%d] XOR V[%d]", currentOpcode & 0x0F00, currentOpcode & 0x00F0);
+                    break;
+
+                case 0x0004:
+                    snprintf(message, 45, " V[%d] XOR V[%d]", currentOpcode & 0x0F00, currentOpcode & 0x00F0);
+                    break;
+            }
+            break;
+
+        default:
+            break;
+    }
+    return message;
+}
+

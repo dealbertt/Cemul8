@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS =  -g -Iinclude -fsanitize=undefined $(shell pkg-config --cflags sdl3) -lSDL3_ttf
+CFLAGS = -Wall -Werror -g -Iinclude -fsanitize=undefined $(shell pkg-config --cflags sdl3) -lSDL3_ttf
 LDFLAGS = $(shell pkg-config --libs sdl3 sdl3-ttf)
 
 

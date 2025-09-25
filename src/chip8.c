@@ -163,7 +163,7 @@ int loadProgram(const char *fileName){
 }
 
 void simulateCpu(){
-      Uint64 frequency = SDL_GetPerformanceFrequency();
+    Uint64 frequency = SDL_GetPerformanceFrequency();
     Uint64 lastCycleTime = SDL_GetPerformanceCounter();
     Uint64 lastTimerTick = SDL_GetPerformanceCounter();
 
@@ -216,7 +216,6 @@ void emulateCycle(){
 
     //printf("Current instruction: %04X\n", opcode);
     //printf("Future instruction to execute: %04X\n", (memory[pc + 1]))
-    //empty the string
 
     //Resetting the instructionDescription
     memset(instructionDescription, 0, sizeof(instructionDescription));
@@ -863,8 +862,9 @@ SDL_Texture *display10Instructions(){
     SDL_Color color = {255, 255, 255, 255};
     int y = objects.titleRect.h;
 
-    for(int i = 0; i < 40; i+= 2){
-        uint16_t currentOpcode = (memory[pc + i] << 8) | (memory[pc + i + 1]);
+    uint16_t secondPc = pc - 2;
+    for(int i = 0; i < 40; i += 2){
+        uint16_t currentOpcode = (memory[secondPc + i] << 8) | (memory[secondPc + i + 1]);
         currentInstruction = getLongerInstruction(currentOpcode);
 
         //Rendered the text of one instruction
@@ -890,6 +890,13 @@ SDL_Texture *display10Instructions(){
 
 char *getLongerInstruction(uint16_t currentOpcode){
     char *message = malloc(45);
+
+    uint8_t xRegIndex = (currentOpcode & 0x0F00) >> 8;
+    uint8_t yRegIndex = (currentOpcode & 0x00F0) >> 4;
+
+    uint8_t nn = (opcode & 0x00FF); //low byte
+    uint16_t nnn = (opcode & 0x0FFF); //low 12 bits
+
     switch(currentOpcode & 0xF000){
         case 0x0000:
             switch(currentOpcode & 0x0F00){
@@ -901,60 +908,102 @@ char *getLongerInstruction(uint16_t currentOpcode){
                     snprintf(message, 45, "RET");
                     break;
                 default:
+                    snprintf(message, 45, "Unkonwn opcode");
                     break;
             }
             break;
 
         case 0x1000:
-            snprintf(message, 45, "JMP 0x%04X", currentOpcode & 0x0FFF);
+            snprintf(message, 45, "JMP 0x%04X", nnn);
             break;
 
         case 0x2000:
-            snprintf(message, 45, "EXEC ADDR 0x%04X", currentOpcode & 0x0FFF);
+            snprintf(message, 45, "EXEC ADDR 0x%04X", nnn);
             break;
 
         case 0x3000:
         case 0x4000:
-            snprintf(message, 45, "SKP V[%d] 0x%04X", currentOpcode & 0x0F00, currentOpcode & 0x0FFF);
+            snprintf(message, 45, "SKP V[%d] 0x%04X", xRegIndex, nnn);
             break;
 
         case 0x5000:
-            snprintf(message, 45, "SKP V[%d] V[%d]", currentOpcode & 0x0F00, currentOpcode & 0x00F0);
+            snprintf(message, 45, "SKP V[%d] V[%d]", xRegIndex, yRegIndex);
             break;
 
         case 0x6000:
-            snprintf(message, 45, "STR  0x%04X V[%d]", currentOpcode & 0x00FF, currentOpcode & 0x0F00);
+            snprintf(message, 45, "STR  0x%04X V[%d]", nn, xRegIndex);
             break;
 
         case 0x7000:
-            snprintf(message, 45, "ADD 0x%04X V[%d]", currentOpcode & 0x00FF, currentOpcode & 0x0F00);
+            snprintf(message, 45, "ADD 0x%04X V[%d]", nn, xRegIndex);
             break;
 
         case 0x8000:
             switch(currentOpcode & 0x000F){
                 case 0x0000:
-                    snprintf(message, 45, "STR V[%d] V[%d]", currentOpcode & 0x00F0, currentOpcode & 0x0F00);
+                    snprintf(message, 45, "STR V[%d] V[%d]", yRegIndex, xRegIndex);
                     break;
 
                 case 0x0001:
-                    snprintf(message, 45, " V[%d] OR V[%d]", currentOpcode & 0x0F00, currentOpcode & 0x00F0);
+                    snprintf(message, 45, " V[%d] OR V[%d]", xRegIndex, yRegIndex);
                     break;
 
                 case 0x0002:
-                    snprintf(message, 45, " V[%d] AND V[%d]", currentOpcode & 0x0F00, currentOpcode & 0x00F0);
+                    snprintf(message, 45, " V[%d] AND V[%d]", xRegIndex, yRegIndex);
                     break;
 
                 case 0x0003:
-                    snprintf(message, 45, " V[%d] XOR V[%d]", currentOpcode & 0x0F00, currentOpcode & 0x00F0);
+                    snprintf(message, 45, " V[%d] XOR V[%d]", xRegIndex, yRegIndex);
                     break;
 
                 case 0x0004:
-                    snprintf(message, 45, " V[%d] XOR V[%d]", currentOpcode & 0x0F00, currentOpcode & 0x00F0);
+                    snprintf(message, 45, " V[%d] XOR V[%d]", xRegIndex, yRegIndex);
                     break;
+
+                case 0x0007:
+                case 0x0005:
+                    snprintf(message, 45, "ADD V[%d] V[%d]", yRegIndex, xRegIndex);
+                    break;
+
+                case 0x000E:
+                case 0x0006:
+                    snprintf(message, 45, "SHFT V[%d]", xRegIndex);
+                    break;
+                default:
+                    snprintf(message, 45, "Unkonwn opcode");
+                    break;
+
             }
             break;
+        case 0x9000:
+            snprintf(message, 45, "SKP V[%d]", xRegIndex);
+            break;
 
+        case 0xA000:
+            snprintf(message, 45, "STR 0x%04X I", nnn);
+            break;
+
+        case 0xB000:
+            snprintf(message, 45, "JMP 0x%04X + V[0]", nnn);
+            break;
+
+        case 0xC000:
+            snprintf(message, 45, "RNDM V[%d]", xRegIndex);
+            break;
+
+        case 0xD000:
+            snprintf(message, 45, "DRW V[%d], V[%d]", xRegIndex, yRegIndex);
+            break;
+
+        case 0xE000:
+            snprintf(message, 45, "SKP V[%d]", xRegIndex);
+            break;
+
+        case 0xF000:
+            snprintf(message, 45, "SKP V[%d]", xRegIndex);
+            break;
         default:
+            snprintf(message, 45, "Unkonwn opcode");
             break;
     }
     return message;

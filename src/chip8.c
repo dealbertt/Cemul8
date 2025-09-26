@@ -873,7 +873,6 @@ SDL_Texture *display10Instructions(){
             , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
             , (SCREEN_HEIGHT * globalConfig->scalingFactor));
 
-    SDL_SetRenderTarget(objects.renderer, targetTexture);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
     SDL_RenderClear(objects.renderer);
 
@@ -906,7 +905,6 @@ SDL_Texture *display10Instructions(){
     }
 
     SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.instructiontitleRect);
-    SDL_SetRenderTarget(objects.renderer, NULL);
 
     return targetTexture;
 }
@@ -1066,6 +1064,9 @@ SDL_Texture *renderControlPanel(){
 
         SDL_RenderTexture(objects.renderer, keyTexture, NULL, &keyRect);
         x += keySurface->w;
+
+        SDL_DestroySurface(keySurface);
+        SDL_DestroyTexture(keyTexture);
     }
 
     //set the target back to the renderer

@@ -190,9 +190,6 @@ void simulateCpu(){
             SDL_Delay(1);
         }
 
-        // Handle input every loop iteration
-        handleRealKeyboard();
-
         // Handle timers
         if (elapsedTimer >= timerIntervalMs) {
             if (delay_timer > 0) delay_timer--;
@@ -204,7 +201,10 @@ void simulateCpu(){
             }
             lastTimerTick = now;
         }
-        renderFrame();
+        // Handle input every loop iteration
+        handleRealKeyboard();
+
+       renderFrame();
     }
 }
 
@@ -434,9 +434,7 @@ void emulateCycle(){
             break;
 
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
-            
             {
-
                 uint8_t startX = x;
                 uint8_t startY = y;
                 uint8_t height = n;
@@ -731,6 +729,17 @@ void checkInternals(){
 int renderFrame(){
     SDL_RenderClear(objects.renderer);
 
+    uint32_t pixels[2048];
+    if (drawFlag) {
+        for (int i = 0; i < 2048; i++) {
+            pixels[i] = gpx[i] ? 0xFFFFFFFF : 0xFF000000;
+        }
+
+        SDL_UpdateTexture(objects.mainScreenTexture, NULL, pixels, 64 * sizeof(Uint32));
+        drawFlag = false;
+        return 0;
+    }
+
     //The entire instruction panel
     SDL_Texture *instructionTexture = display10Instructions();
 
@@ -751,16 +760,6 @@ int renderFrame(){
 
 
     //update the CHIP-8 screen if needed
-    uint32_t pixels[2048];
-    if (drawFlag) {
-        for (int i = 0; i < 2048; i++) {
-            pixels[i] = gpx[i] ? 0xFFFFFFFF : 0xFF000000;
-        }
-
-        SDL_UpdateTexture(objects.mainScreenTexture, NULL, pixels, 64 * sizeof(Uint32));
-        drawFlag = false;
-    }
-
     //Rendering the chip-8 screen
     SDL_FRect mainWindowRect = {
         instructionPanelRect.w
@@ -981,31 +980,36 @@ SDL_Texture *renderControlPanel(){
     SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);
 
     //Render the title of the control panel
-    int x = objects.controlTitleRect.x;
+    int y = objects.controlTitleRect.y + 50;
 
-    for(int i = 0; i < 16; i++){
-        char keyPadCode[5];
-        SDL_Color color = {255, 255, 255, 255}; //white
-        if(keyPad[i] != 0){
-            color.b = 0;
-            color.g = 0;
+    for(int row = 0; row < 4; row ++){
+        int x = objects.controlTitleRect.x;
+        for(int col = 0; col < 4; col++){
+            int keyIndex = row * 4 + col;
+            char keyPadCode[5];
+            SDL_Color color = {255, 255, 255, 255}; //white
+            if(keyPad[keyIndex] != 0){
+                color.b = 0;
+                color.g = 0;
+            }
+            snprintf(keyPadCode, sizeof(keyPadCode), "%01X", keyIndex);
+
+            SDL_Surface *keySurface = TTF_RenderText_Solid(objects.font, keyPadCode, strlen(keyPadCode), color); 
+            SDL_Texture *keyTexture = SDL_CreateTextureFromSurface(objects.renderer, keySurface);
+
+            SDL_FRect keyRect = {
+                x
+                    , y 
+                    , keySurface->w 
+                    , keySurface->h};
+
+            SDL_RenderTexture(objects.renderer, keyTexture, NULL, &keyRect);
+            x += keySurface->w;
+
+            SDL_DestroySurface(keySurface);
+            SDL_DestroyTexture(keyTexture);
         }
-        snprintf(keyPadCode, sizeof(keyPadCode), "%01X", i);
-
-        SDL_Surface *keySurface = TTF_RenderText_Solid(objects.font, keyPadCode, strlen(keyPadCode), color); 
-        SDL_Texture *keyTexture = SDL_CreateTextureFromSurface(objects.renderer, keySurface);
-
-        SDL_FRect keyRect = {
-            x
-            , objects.controlTitleRect.y + 50
-            , keySurface->w 
-            , keySurface->h};
-
-        SDL_RenderTexture(objects.renderer, keyTexture, NULL, &keyRect);
-        x += keySurface->w;
-
-        SDL_DestroySurface(keySurface);
-        SDL_DestroyTexture(keyTexture);
+        y += 50;
     }
 
     //set the target back to the renderer

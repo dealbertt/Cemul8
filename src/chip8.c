@@ -19,31 +19,12 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 #include "../include/chip8.h"
-#include "../include/config.h"
+#include "../include/overlay.h"
 #include "../include/functions.h"
 
 
+Chip8 *chip;
 //CHIP-8 specifications
-uint16_t opcode; //the operation code of the instructiouint16_t n
-uint8_t memory[MEMORY]; //the total memory of the chip-8
-uint8_t V[16]; //all the general purpose registers
-
-uint16_t I; //special register I for memory addresses
-uint16_t pc; //Program counter
-
-uint8_t gpx[SCREEN_WIDTH * SCREEN_HEIGHT]; //pixels of the screen. Total pixels in the array: 2048
-                                                //Keep in mind that this are the screens of the CHIP-8, but not of the actual screen that is showed, that is because the original resolution is way too small
-
-char instructionDescription[25];
-
-uint8_t delay_timer;
-uint8_t sound_timer;
-
-//STACK
-uint16_t stack[16];
-uint16_t sp; //stack pointer
-             //
-uint8_t keyPad[16];
 //I have no idea how to implement the pad, typeshit
 
 //Flag for indicating when the screen needs to be updated
@@ -97,36 +78,40 @@ extern emulObjects objects;
 extern Config *globalConfig;
 
 void initialize(){
-    pc = 0x200; // Set program counter to 0x200
-    opcode = 0; // Reset op code
-    I = 0;      // Reset I
-    sp = 0;     // Reset stack pointer
+    chip = malloc(sizeof(Chip8));
+    if(!chip){
+        printf("Error allocating chip8!\n");
+    }
+    chip->pc = 0x200; // Set program counter to 0x200
+    chip->opcode = 0; // Reset op code
+    chip->I = 0;      // Reset I
+    chip->sp = 0;     // Reset stack pointer
 
     // Clear the display
     for (int i = 0; i < 2048; i++) {
-        gpx[i] = 0;
+        chip->gpx[i] = 0;
     }
 
     // Clear the stack, keypad, and V registers
     for (int i = 0; i < 16; i++) {
-        stack[i] = 0;
-        keyPad[i] = 0;
-        V[i] = 0;
+        chip->stack[i] = 0;
+        chip->keyPad[i] = 0;
+        chip->V[i] = 0;
     }
 
-    // Clear memory
+    // Clear chip->memory
     for (int i = 0; i < 4096; i++) {
-        memory[i] = 0;
+        chip->memory[i] = 0;
     }
 
-    // Load font set into memory
+    // Load font set into chip->memory
     for (int i = 0; i < 80; i++) {
-        memory[i] = chip8_fontset[i];
+        chip->memory[i] = chip8_fontset[i];
     }
 
     // Reset timers
-    delay_timer = 0;
-    sound_timer = 0;
+    chip->delay_timer = 0;
+    chip->sound_timer = 0;
 
 }
 
@@ -148,7 +133,7 @@ int loadProgram(const char *fileName){
         return -1;
     }
 
-    size_t bytesRead = fread(&memory[512], 1, fileSize, ptr); //Return the total number of bytes read, which if everything goes fine, should be equal to the fileSize
+    size_t bytesRead = fread(&chip->memory[512], 1, fileSize, ptr); //Return the total number of bytes read, which if everything goes fine, should be equal to the fileSize
     if(bytesRead != fileSize){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to read the program\n");
         fclose(ptr);
@@ -156,8 +141,7 @@ int loadProgram(const char *fileName){
     }
 
     fclose(ptr);
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Program loaded in memory successfully!\n");
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: First few bytes of program: %02X %02X %02X %02X\n", memory[0x200], memory[0x201], memory[0x202], memory[0x203]);
+    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Program loaded in chip->memory successfully!\n");
     return 0;
 }
 
@@ -192,10 +176,10 @@ void simulateCpu(){
 
         // Handle timers
         if (elapsedTimer >= timerIntervalMs) {
-            if (delay_timer > 0) delay_timer--;
-            if (sound_timer > 0) {
-                sound_timer--;
-                if (sound_timer == 0) {
+            if (chip->delay_timer > 0) chip->delay_timer--;
+            if (chip->sound_timer > 0) {
+                chip->sound_timer--;
+                if (chip->sound_timer == 0) {
                     printf("Beep!\n");
                 }
             }
@@ -211,226 +195,226 @@ void simulateCpu(){
 
 
 void emulateCycle(){
-    opcode = (memory[pc] << 8) | (memory[pc + 1]);
+    chip->opcode = (chip->memory[chip->pc] << 8) | (chip->memory[chip->pc + 1]);
 
-    //printf("Current instruction: %04X\n", opcode);
-    //printf("Future instruction to execute: %04X\n", (memory[pc + 1]))
+    //printf("Current instruction: %04X\n", chip->opcode);
+    //printf("Future instruction to execute: %04X\n", (chip->memory[pc + 1]))
 
-    //EXtract the nibbles of the opcode
-    uint8_t xRegIndex = (opcode & 0x0F00) >> 8;
-    uint8_t yRegIndex = (opcode & 0x00F0) >> 4;
+    //EXtract the nibbles of the chip->opcode
+    uint8_t xRegIndex = (chip->opcode & 0x0F00) >> 8;
+    uint8_t yRegIndex = (chip->opcode & 0x00F0) >> 4;
 
-    uint8_t n = (opcode & 0x000F); //low 4 bits
-    uint8_t nn = (opcode & 0x00FF); //low byte
-    uint16_t nnn = (opcode & 0x0FFF); //low 12 bits
+    uint8_t n = (chip->opcode & 0x000F); //low 4 bits
+    uint8_t nn = (chip->opcode & 0x00FF); //low byte
+    uint16_t nnn = (chip->opcode & 0x0FFF); //low 12 bits
 
-    uint8_t x = V[xRegIndex];
-    uint8_t y = V[yRegIndex]; 
+    uint8_t x = chip->V[xRegIndex];
+    uint8_t y = chip->V[yRegIndex]; 
 
-    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Opcode: %04X\n", opcode);
+    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Opcode: %04X\n", chip->opcode);
 
     //Increment before decode and execution to avoid code repetition
-    pc += 2;
+    chip->pc += 2;
 
     //DECODE
-    switch(opcode & 0xF000){        
+    switch(chip->opcode & 0xF000){        
         case 0x0000:
-            switch(opcode & 0x0FFF){
+            switch(chip->opcode & 0x0FFF){
                 case 0x00E0: //Clear the screen
                     for(int i = 0; i < 2048; i++){
-                        gpx[i] = 0x0;
+                        chip->gpx[i] = 0x0;
                     }
 
                     drawFlag = true;
                     break;
                 
                 case 0x00EE: //Return from a subroutine
-                    if(sp >= 0){
-                        sp--; //Because we increased when pushing onto the stack to point to the next free slot, we now decrease to retreive the value that was pushed
-                        pc = stack[sp];
+                    if(chip->sp >= 0){
+                        chip->sp--; //Because we increased when pushing onto the stack to point to the next free slot, we now decrease to retreive the value that was pushed
+                       chip->pc = chip->stack[chip->sp];
                     }else{
-                        SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: The stack pointer is less than 0!\nCurrent value of sp: %d\n", sp);
+                        SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: The stack pointer is less than 0!\nCurrent value of sp: %d\n", chip->sp);
                     }
                     break;
                 default:
-                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
+                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn chip->opcode: 0x%04X\n", chip->opcode);
                     break;
             }
 
             break;
         case 0x1000: //jump to the address NNN
-            pc = nnn;
+            chip->pc = nnn;
             break;
 
         case 0x2000: //calls subroutine at address NNN
-            if(sp < 16){
-                stack[sp] = pc;
-                pc = nnn;
-                sp++; 
+            if(chip->sp < 16){
+                chip->stack[chip->sp] = chip->pc;
+                chip->pc = nnn;
+                chip->sp++; 
             }else{
-                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: The stack pointer is greater than 15!\nCurrent value of sp: %d\n", sp);
+                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: The stack pointer is greater than 15!\nCurrent value of sp: %d\n", chip->sp);
             }
             break;
 
         case 0x3000: //Skip the following instruction if the value of register VX equals NN
-            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
-            if(V[xRegIndex] == nn){
-                pc += 2;
+            if(chip->V[xRegIndex] == nn){
+                chip->pc += 2;
             }
             
             break;
 
         case 0x4000: //Skip the following instruction if the value of register VX is not equal to NN
-            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
-            if(V[xRegIndex] != nn){
-                pc += 2;
+            if(chip->V[xRegIndex] != nn){
+                chip->pc += 2;
             }
             
             break;
 
         case 0x5000: //Skip the following instruction if the value of register VX is equal to the value of register VY
-            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
-            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
-            if(V[xRegIndex] == V[yRegIndex]){
-                pc += 2;
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, chip->V[yRegIndex]);
+            if(chip->V[xRegIndex] == chip->V[yRegIndex]){
+                 chip->pc += 2;
             }
 
             break;
 
         case 0x6000: //Store number NN in register VX
-            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
 
-            V[xRegIndex] = nn;
+            chip->V[xRegIndex] = nn;
             break;
 
         case 0x7000: //Add the value NN to register VX
-            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
 
-            V[xRegIndex] += nn;
+            chip->V[xRegIndex] += nn;
             break;
 
         case 0x8000:
-            switch(opcode & 0x000F){
+            switch(chip->opcode & 0x000F){
                 case 0x0000: //store the value of VY on VX
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
-                    V[xRegIndex] = V[yRegIndex];
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, chip->V[yRegIndex]);
+                    chip->V[xRegIndex] = chip->V[yRegIndex];
                     break;
 
                 case 0x0001: //Set VX to VX OR VY
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
-                    V[0xF] = 0;
-                    V[xRegIndex] |= V[yRegIndex];
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, chip->V[yRegIndex]);
+                    chip->V[0xF] = 0;
+                    chip->V[xRegIndex] |= chip->V[yRegIndex];
                     break;
 
                 case 0x0002: //Set VX to VX AND VY
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
-                    V[0xF] = 0;
-                    V[xRegIndex] &= V[yRegIndex];
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, chip->V[yRegIndex]);
+                    chip->V[0xF] = 0;
+                    chip->V[xRegIndex] &= chip->V[yRegIndex];
                     break;
 
                 case 0x0003: //Set VX to VX XOR VY
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
-                    V[0xF] = 0;
-                    V[xRegIndex] ^= V[yRegIndex];
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, chip->V[yRegIndex]);
+                    chip->V[0xF] = 0;
+                    chip->V[xRegIndex] ^= chip->V[yRegIndex];
                     break;
 
 
                 case 0x0004: //Add the value of register VY to register VX
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
-                    if(V[xRegIndex] + V[yRegIndex] > 0xFF){
-                        V[0xF] = 1;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, chip->V[yRegIndex]);
+                    if(chip->V[xRegIndex] + chip->V[yRegIndex] > 0xFF){
+                        chip->V[0xF] = 1;
                     }else{
-                        V[0xF] = 0;
+                        chip->V[0xF] = 0;
                     }
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0xF]: %04X\n", V[0xF]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0xF]: %04X\n", chip->V[0xF]);
 
-                    V[xRegIndex] += V[yRegIndex];
+                    chip->V[xRegIndex] += chip->V[yRegIndex];
                     break;
 
                 case 0x0005: //Subtract the value of register VY from register VX
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
-                    if(V[yRegIndex] > V[xRegIndex]){
-                        V[0xF] = 0;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, chip->V[yRegIndex]);
+                    if(chip->V[yRegIndex] > chip->V[xRegIndex]){
+                        chip->V[0xF] = 0;
                     }else{
-                        V[0xF] = 1;
+                        chip->V[0xF] = 1;
                     }
 
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0xF]: %04X\n", V[0xF]);
-                    V[xRegIndex] -= V[yRegIndex];
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of chip->V[0xF]: %04X\n", chip->V[0xF]);
+                    chip->V[xRegIndex] -= chip->V[yRegIndex];
                     break;
 
                 case 0x0006: //Store the value of register VY shifted right one bit in register VX
-                    V[0xF] = V[xRegIndex] & 0x1;
-                    V[xRegIndex] = V[yRegIndex];
-                    V[xRegIndex] >>= 1;
+                    chip->V[0xF] = chip->V[xRegIndex] & 0x1;
+                    chip->V[xRegIndex] = chip->V[yRegIndex];
+                    chip->V[xRegIndex] >>= 1;
 
 
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0xF]: %04X\n", V[0xF]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of chip->V[0xF]: %04X\n", chip->V[0xF]);
                     break;
 
                 case 0x0007: //Set register VX to the value of VY minus VX
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
-                    if(V[xRegIndex] > V[yRegIndex]){
-                        V[0xF] = 0;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, chip->V[yRegIndex]);
+                    if(chip->V[xRegIndex] > chip->V[yRegIndex]){
+                        chip->V[0xF] = 0;
                     }else{
-                        V[0xF] = 1;
+                        chip->V[0xF] = 1;
                     }
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0xF]: %04X\n", V[0xF]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of chip->V[0xF]: %04X\n", chip->V[0xF]);
 
-                    V[xRegIndex] = V[yRegIndex] - V[xRegIndex];
+                    chip->V[xRegIndex] = chip->V[yRegIndex] - chip->V[xRegIndex];
                     break;
 
                 case 0x000E: //store the value of register vy shifted left one bit in register vx
-                    V[0xF] = V[xRegIndex] >> 7; 
-                    V[xRegIndex] = V[yRegIndex];
-                    V[xRegIndex] <<=  1;
+                    chip->V[0xF] = chip->V[xRegIndex] >> 7; 
+                    chip->V[xRegIndex] = chip->V[yRegIndex];
+                    chip->V[xRegIndex] <<=  1;
 
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0xF]: %04X\n", V[0xF]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of chip->V[0xF]: %04X\n", chip->V[0xF]);
                     break;
                 default:
-                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
+                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn chip->opcode: 0x%04X\n", chip->opcode);
                     break;
             }
             break;
         case 0x9000://Skip the following instruction if the value of register VX is not equal to the value of register VY
-            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, V[xRegIndex]);
-            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, V[yRegIndex]);
-            if(V[xRegIndex] != V[yRegIndex]){
-                pc += 2;
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip->V[xRegIndex]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", yRegIndex, chip->V[yRegIndex]);
+            if(chip->V[xRegIndex] != chip->V[yRegIndex]){
+                 chip->pc += 2;
             }
 
             break;
 
-        case 0xA000: //Store memory address NNN in register I
-            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of I: %04X\n", I);
+        case 0xA000: //Store chip->memory address NNN in register I
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of I: %04X\n", chip->I);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NNN: %04X\n", nnn);
 
-            I = nnn; 
+            chip->I = nnn; 
             break;
 
         case 0xB000: //Jump to address NNN + V0
-            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0]: %04X\n", V[0]);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[0]: %04X\n", chip->V[0]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NNN: %04X\n", nnn);
 
-            pc = nnn + V[0];
+            chip->pc = nnn + chip->V[0];
             break;
 
         case 0xC000://Set VX Random number with a mask of NN
-            V[xRegIndex] = generateRandomNN(nn);
-            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
+            chip->V[xRegIndex] = generateRandomNN(nn);
+            SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, chip->V[xRegIndex]);
             break;
 
         case 0xD000://Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I 
@@ -440,10 +424,10 @@ void emulateCycle(){
                 uint8_t height = n;
                 //static bool test = false;
 
-                V[0xF] = 0;
+                chip->V[0xF] = 0;
                 for (int yline = 0; yline < height; yline++)
                 {
-                    uint8_t pixel = memory[I + yline];
+                    uint8_t pixel = chip->memory[chip->I + yline];
                     for(int xline = 0; xline < 8; xline++)
                     {
                         bool pixelOn = (pixel >> (7 - xline)) & 1;
@@ -455,11 +439,11 @@ void emulateCycle(){
 
                             //If even after wrapping, the coordinates are within bounds, we draw, otherwise we dont
                             if(X >= 0 && X < 64 && Y >= 0 && Y < 32){
-                                if(gpx[idx]){
-                                    V[0xF] = 1;
+                                if(chip->gpx[idx]){
+                                    chip->V[0xF] = 1;
                                 }
 
-                                gpx[idx] ^= 1;
+                                chip->gpx[idx] ^= 1;
                             }
 
                         }
@@ -479,7 +463,7 @@ void emulateCycle(){
                 if(test){
                     printf("V[0]: %d\n", V[0]);
                     printf("V[1]: %d\n", V[1]);
-                    printf("V[F]: %d\n", V[0xF]);
+                    printf("V[F]: %d\n", chip->V[0xF]);
                     printf("V[9]: %d\n", V[9]);
                 }
 
@@ -498,42 +482,42 @@ void emulateCycle(){
             }
 
         case 0xE000: 
-            switch (opcode & 0x000F) {
+            switch (chip->opcode & 0x000F) {
                 case 0x000E: //Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
-                    if(keyPad[V[xRegIndex]] != 0){
-                        pc += 2;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, chip->V[xRegIndex]);
+                    if(chip->keyPad[chip->V[xRegIndex]] != 0){
+                         chip->pc += 2;
                     }                         
 
                     break;
 
                 case 0x0001://Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
-                    if(keyPad[V[xRegIndex]] == 0){
-                        pc += 2;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, chip->V[xRegIndex]);
+                    if(chip->keyPad[chip->V[xRegIndex]] == 0){
+                         chip->pc += 2;
                     }                         
 
                     break;
 
                 default:
-                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
+                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn chip->opcode: 0x%04X\n", chip->opcode);
                     break;
             }
             break;
 
         case 0xF000:
-            switch (opcode & 0x00FF){
+            switch (chip->opcode & 0x00FF){
                 case 0x0007://Store the current value of the  delay timer in register VX
-                    V[xRegIndex] = delay_timer; 
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
+                    chip->V[xRegIndex] = chip->delay_timer; 
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, chip->V[xRegIndex]);
                     break;
 
                 case 0x000A://Wait for a keypress and store the result in register VX
                 {
                     bool pressed = false;
                     for (int i = 0; i < 16; i++) {
-                        if (keyPad[i] == 0x1){
-                            V[xRegIndex] = i;      // Store key in Vx
+                        if (chip->keyPad[i] == 0x1){
+                            chip->V[xRegIndex] = i;      // Store key in Vx
                             pressed = true;
                             break;
                         }
@@ -541,76 +525,76 @@ void emulateCycle(){
 
                     if (!pressed) {
                         //pc stays the same, we stay on the same instruction
-                        pc -= 2;
+                        chip->pc -= 2;
                     }else{
-                        SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
+                        SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, chip->V[xRegIndex]);
                         return;
                     }
                     break;
                 }
 
                 case 0x0015://Set the delay timer to the value of register VX
-                    delay_timer = V[xRegIndex]; 
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
+                    chip->delay_timer = chip->V[xRegIndex]; 
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, chip->V[xRegIndex]);
                     break;
 
                 case 0x0018://Set the sound timer to the value of register VX
-                    sound_timer = V[xRegIndex]; 
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
+                    chip->sound_timer = chip->V[xRegIndex]; 
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, chip->V[xRegIndex]);
                     break;
 
                 case 0x001E: //Add the value stored in register VX to register I
-                    if(I + V[xRegIndex] > 0xFFF){
-                        V[0xF] = 1;
+                    if(chip->I + chip->V[xRegIndex] > 0xFFF){
+                        chip->V[0xF] = 1;
                     }
                     else{
-                        V[0xF] = 0;
+                        chip->V[0xF] = 0;
                     }
-                    I += V[xRegIndex];
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of I: %04X\n", I);
+                    chip->I += chip->V[xRegIndex];
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, chip->V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of I: %04X\n", chip->I);
                     break;
 
-                case 0x0029://Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
-                    I = V[xRegIndex] * 0x5;
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
+                case 0x0029://Set I to the chip->memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
+                    chip->I = chip->V[xRegIndex] * 0x5;
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, chip->V[xRegIndex]);
                     break;
 
                 case 0x0033://Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
-                    memory[I] = V[xRegIndex] / 100;
-                    memory[I + 1] = (V[xRegIndex] / 10) % 10;
-                    memory[I + 2] = V[xRegIndex]  % 10;
+                    chip->memory[chip->I] = chip->V[xRegIndex] / 100;
+                    chip->memory[chip->I + 1] = (chip->V[xRegIndex] / 10) % 10;
+                    chip->memory[chip->I + 2] = chip->V[xRegIndex]  % 10;
 
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, V[xRegIndex]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of memory[I]: %04X\n", memory[I]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of memory[I + 1]: %04X\n", memory[I + 1]);
-                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of memory[I + 2]: %04X\n", memory[I + 2]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n",xRegIndex, chip->V[xRegIndex]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of chip->memory[I]: %04X\n", chip->memory[chip->I]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of chip->memory[I + 1]: %04X\n", chip->memory[chip->I + 1]);
+                    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of chip->memory[I + 2]: %04X\n", chip->memory[chip->I + 2]);
 
                     break;
 
-                    case 0x0055: //Store the values of registers V0 to VX inclusive in memory starting at address I. I is set to I + X + 1 after operation²
+                    case 0x0055: //Store the values of registers V0 to VX inclusive in chip->memory starting at address I. I is set to I + X + 1 after operation²
                     for(int i = 0; i <= xRegIndex; i++){
-                        memory[I + i] = V[i];
+                        chip->memory[chip->I + i] = chip->V[i];
                     }
 
-                    I += xRegIndex + 1;
+                    chip->I += xRegIndex + 1;
                     break;
 
-                case 0x0065: //Fill registers V0 to VX inclusive with the values stored in memory starting at address I. I is set to I + X + 1 after operation²
+                case 0x0065: //Fill registers V0 to VX inclusive with the values stored in chip->memory starting at address I. I is set to I + X + 1 after operation²
                     for(int i = 0; i <= xRegIndex; i++){
-                        V[i] = memory[I + i];
+                        chip->V[i] = chip->memory[chip->I + i];
                     }
 
-                    I += xRegIndex + 1;
+                    chip->I += xRegIndex + 1;
                     break;
                 default:
-                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
+                    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn chip->opcode: 0x%04X\n", chip->opcode);
                     break;
             }
             break;
 
         default:
-            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn opcode: 0x%04X\n", opcode);
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unkonwn chip->opcode: 0x%04X\n", chip->opcode);
             break;
     } 
 
@@ -635,7 +619,7 @@ int handleRealKeyboard(){
         if(event.type == SDL_EVENT_KEY_DOWN){
             for(int i = 0; i < 16; i++){
                 if(keyMap[i] == event.key.scancode){
-                    keyPad[i] = 0x1;
+                    chip->keyPad[i] = 0x1;
                 }
             }
 
@@ -646,26 +630,16 @@ int handleRealKeyboard(){
                 objects.keepGoing = !objects.keepGoing;
 
             if(event.key.scancode == SDL_SCANCODE_F2){
-                if(!objects.keepGoing)
-                checkRegisters();
             }
 
             if(event.key.scancode == SDL_SCANCODE_F3){
-                if(!objects.keepGoing)
-                checkStack();
             }
 
             if(event.key.scancode == SDL_SCANCODE_F4){
-                if(!objects.keepGoing)
-                checkInternals();
             }
 
             if(event.key.scancode == SDL_SCANCODE_F5){
                 objects.keepGoing = !objects.keepGoing;
-                checkRegisters();
-                checkStack();
-                checkKeyPad();
-                checkInternals();
             }
 
             if(event.key.scancode == SDL_SCANCODE_F6){
@@ -677,7 +651,7 @@ int handleRealKeyboard(){
         if(event.type == SDL_EVENT_KEY_UP){
             for(int i = 0; i < 16; i++){
                 if(keyMap[i] == event.key.scancode){
-                    keyPad[i] = 0x0;
+                    chip->keyPad[i] = 0x0;
                 }
             }
 
@@ -688,42 +662,6 @@ int handleRealKeyboard(){
 //
 
 
-void checkRegisters(){
-    printf("CHIP-8 REGISTERS: \n");
-
-    for(int i = 0; i < 16; i++){
-        printf("V[%d]: %04X\n", i, V[i]);
-    }
-    printf("I: %04X\n", I);
-    printf("-------------\n");
-}
-
-void checkStack(){
-    printf("CHIP-8 STACK: \n");
-    for(int i = 0; i < 16; i++){
-        printf("stack[%d]: %04X\n", i, stack[i]);
-    }
-    printf("-------------\n");
-}
-
-
-void checkKeyPad(){
-    printf("CHIP-8 KEYPAD: \n");
-    for(int i = 0; i < 16; i++){
-        printf("keypad[%d]: %04X\n", i, keyPad[i]);
-    }
-    printf("-------------\n");
-}
-
-void checkInternals(){
-        
-    printf("CHIP-8 INTERNALS: \n");
-    printf("PC: %04X\n", pc);
-    printf("delay_timer: %04X\n", delay_timer);
-    printf("sound_timer: %04X\n", sound_timer);
-    printf("opcode: %04X\n", opcode);
-    printf("-------------\n");
-}
 
 //function in charge or rendering the entire screen (overlay + CHIP-8 screen)
 int renderFrame(){
@@ -737,7 +675,7 @@ int renderFrame(){
     if (drawFlag) {
         uint32_t pixels[2048];
         for (int i = 0; i < 2048; i++) {
-            pixels[i] = gpx[i] ? 0xFFFFFFFF : 0xFF000000;
+            pixels[i] = chip->gpx[i] ? 0xFFFFFFFF : 0xFF000000;
         }
 
         SDL_UpdateTexture(objects.mainScreenTexture, NULL, pixels, 64 * sizeof(Uint32));
@@ -756,12 +694,12 @@ int renderFrame(){
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
     //The entire instruction panel
-    renderInstructionPanel();
+    renderInstructionPanel(objects, chip, globalConfig->scalingFactor);
 
     //The keypad Control panel
-    renderControlPanel();
+    renderControlPanel(objects, chip);
 
-    renderInternalPanel();
+    renderInternalPanel(objects, chip);
     //Border for the instruction Panel
     //Border for the chip8 screen
 
@@ -776,210 +714,5 @@ int renderFrame(){
 }
 
 
-int renderInstructionPanel(){
-    SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.instructiontitleRect);
-
-    TTF_SetFontSize(objects.font, 25.0);
-    SDL_Color color = {255, 255, 255, 255};
-
-    uint16_t secondPc = pc - 2;
-    const uint16_t currentOpcode = (memory[secondPc] << 8) | (memory[secondPc + 1]);
-    char *currentInstruction = getLongerInstruction(currentOpcode, secondPc);
-
-    SDL_Surface *surface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
-    SDL_Texture *currentInstructionTexture = SDL_CreateTextureFromSurface(objects.renderer, surface);
-
-    SDL_DestroySurface(surface);
-    free(currentInstruction);
-
-    const SDL_FRect rect = {
-        0
-            , objects.instructiontitleRect.h 
-            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
-            , 60};
-
-    SDL_RenderTexture(objects.renderer, currentInstructionTexture, NULL, &rect);
-
-    SDL_DestroyTexture(currentInstructionTexture);
-
-
-    //Render the entire instruction panel
-
-    //paint the border
-                                                            
-    return 0; 
-}
-
-int renderControlPanel(){
-    //set the target back to the renderer
-    SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);
-
-    //Render the title of the control panel
-    int y = objects.controlTitleRect.y + 50;
-
-    TTF_SetFontSize(objects.font, 60); 
-    for(int row = 0; row < 4; row ++){
-        int x = objects.controlTitleRect.x - 50;
-
-        for(int col = 0; col < 4; col++){
-            int keyIndex = row * 4 + col;
-            char keyPadCode[5];
-            SDL_Color color = {255, 255, 255, 255}; //white
-
-            if(keyPad[keyIndex] != 0){
-                color.b = 0;
-                color.g = 0;
-            }
-            snprintf(keyPadCode, sizeof(keyPadCode), "%01X", keyIndex);
-
-            SDL_Surface *keySurface = TTF_RenderText_Solid(objects.font, keyPadCode, strlen(keyPadCode), color); 
-            SDL_Texture *keyTexture = SDL_CreateTextureFromSurface(objects.renderer, keySurface);
-
-            const SDL_FRect keyRect = {
-                    x
-                    , y 
-                    , keySurface->w 
-                    , keySurface->h};
-
-            SDL_RenderTexture(objects.renderer, keyTexture, NULL, &keyRect);
-            x += keySurface->w + 50;
-
-            SDL_DestroySurface(keySurface);
-            SDL_DestroyTexture(keyTexture);
-        }
-        y += 60;
-    }
-    return 0; 
-}
-
-int renderInternalPanel(){
-
-    SDL_RenderTexture(objects.renderer, objects.internalsTitlePanel, NULL, &objects.internalTitleRect);
-
-    return 0;
-}
-char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc){
-    char *message = malloc(60); // enough space for PC + description
-
-    if (!message) return NULL;
-
-    const uint8_t xRegIndex = (currentOpcode & 0x0F00) >> 8;
-    const uint8_t yRegIndex = (currentOpcode & 0x00F0) >> 4;
-    const uint8_t nn = currentOpcode & 0x00FF;
-    const uint16_t nnn = currentOpcode & 0x0FFF;
-
-    switch (currentOpcode & 0xF000) {
-        case 0x0000:
-            switch (currentOpcode & 0x0FFF) {
-                case 0x00E0:
-                    snprintf(message, 60, "0x%03X: CLR SCRN", secondPc);
-                    break;
-                case 0x00EE:
-                    snprintf(message, 60, "0x%03X: RET", secondPc);
-                    break;
-                default:
-                    snprintf(message, 60, "0x%03X: MCHN CD", secondPc);
-                    break;
-            }
-            break;
-
-        case 0x1000:
-            snprintf(message, 60, "0x%03X: JMP 0x%03X", secondPc, nnn);
-            break;
-
-        case 0x2000:
-            snprintf(message, 60, "0x%03X: CALL 0x%03X", secondPc, nnn);
-            break;
-
-        case 0x3000:
-            snprintf(message, 60, "0x%03X: SKP V[%d] == 0x%02X", secondPc, xRegIndex, nn);
-            break;
-
-        case 0x4000:
-            snprintf(message, 60, "0x%03X: SKP V[%d] != 0x%02X", secondPc, xRegIndex, nn);
-            break;
-
-        case 0x5000:
-            snprintf(message, 60, "0x%03X: SKP V[%d] == V[%d]", secondPc, xRegIndex, yRegIndex);
-            break;
-
-        case 0x6000:
-            snprintf(message, 60, "0x%03X: STR 0x%02X -> V[%d]", secondPc, nn, xRegIndex);
-            break;
-
-        case 0x7000:
-            snprintf(message, 60, "0x%03X: ADD 0x%02X -> V[%d]", secondPc, nn, xRegIndex);
-            break;
-
-        case 0x8000:
-            switch (currentOpcode & 0x000F) {
-                case 0x0:
-                    snprintf(message, 60, "0x%03X: V[%d] = V[%d]", secondPc, xRegIndex, yRegIndex);
-                    break;
-                case 0x1:
-                    snprintf(message, 60, "0x%03X: V[%d] |= V[%d]", secondPc, xRegIndex, yRegIndex);
-                    break;
-                case 0x2:
-                    snprintf(message, 60, "0x%03X: V[%d] &= V[%d]", secondPc, xRegIndex, yRegIndex);
-                    break;
-                case 0x3:
-                    snprintf(message, 60, "0x%03X: V[%d] ^= V[%d]", secondPc, xRegIndex, yRegIndex);
-                    break;
-                case 0x4:
-                    snprintf(message, 60, "0x%03X: V[%d] += V[%d]", secondPc, xRegIndex, yRegIndex);
-                    break;
-                case 0x5:
-                    snprintf(message, 60, "0x%03X: V[%d] -= V[%d]", secondPc, xRegIndex, yRegIndex);
-                    break;
-                case 0x6:
-                    snprintf(message, 60, "0x%03X: V[%d] >>= 1", secondPc, xRegIndex);
-                    break;
-                case 0x7:
-                    snprintf(message, 60, "0x%03X: V[%d] - V[%d]", secondPc, xRegIndex, yRegIndex);
-                    break;
-                case 0xE:
-                    snprintf(message, 60, "0x%03X: V[%d] <<= 1", secondPc, xRegIndex);
-                    break;
-                default:
-                    snprintf(message, 60, "0x%03X: UNKNOWN OPCODE", secondPc);
-                    break;
-            }
-            break;
-
-        case 0x9000:
-            snprintf(message, 60, "0x%03X: SKP V[%d] != V[%d]", secondPc, xRegIndex, yRegIndex);
-            break;
-
-        case 0xA000:
-            snprintf(message, 60, "0x%03X: I = 0x%03X", secondPc, nnn);
-            break;
-
-        case 0xB000:
-            snprintf(message, 60, "0x%03X: JMP 0x%03X + V[0]", secondPc, nnn);
-            break;
-
-        case 0xC000:
-            snprintf(message, 60, "0x%03X: V[%d] = RAND & 0x%02X", secondPc, xRegIndex, nn);
-            break;
-
-        case 0xD000:
-            snprintf(message, 60, "0x%03X: DRW V[%d], V[%d]", secondPc, xRegIndex, yRegIndex);
-            break;
-
-        case 0xE000:
-            snprintf(message, 60, "0x%03X: SKP V[%d]", secondPc, xRegIndex);
-            break;
-
-        case 0xF000:
-            snprintf(message, 60, "0x%03X: FX?? V[%d]", secondPc, xRegIndex);
-            break;
-
-        default:
-            snprintf(message, 60, "0x%03X: UNKNOWN OPCODE", secondPc);
-            break;
-    }
-
-    return message;
-}
 
 

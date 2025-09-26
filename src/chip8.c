@@ -31,6 +31,8 @@ uint8_t V[16]; //all the general purpose registers
 uint16_t I; //special register I for memory addresses
 uint16_t pc; //Program counter
 
+int frameCount = 0;
+Uint64 lastFpsTime;
 
 uint8_t gpx[SCREEN_WIDTH * SCREEN_HEIGHT]; //pixels of the screen. Total pixels in the array: 2048
                                                 //Keep in mind that this are the screens of the CHIP-8, but not of the actual screen that is showed, that is because the original resolution is way too small
@@ -172,6 +174,7 @@ void simulateCpu(){
 
     objects.start = true;
     objects.keepGoing = true;
+    lastFpsTime = SDL_GetPerformanceCounter();
 
     while (objects.start) {
         Uint64 now = SDL_GetPerformanceCounter();
@@ -850,16 +853,20 @@ int renderFrame(){
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
     //Border of the title
+    //SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
+    //SDL_RenderRect(objects.renderer, &objects.instructiontitleRect);
+    //SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
+
+
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
-    SDL_RenderRect(objects.renderer, &objects.instructiontitleRect);
+    SDL_RenderRect(objects.renderer, &controlRect);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
-
-
 
     SDL_RenderPresent(objects.renderer);
 
     SDL_DestroyTexture(instructionTexture);
     SDL_DestroyTexture(controlPanel);
+
     return 0;
 }
 
@@ -909,14 +916,14 @@ SDL_Texture *display10Instructions(){
     return targetTexture;
 }
 
-char *getLongerInstruction(uint16_t currentOpcode){
+char *getLongerInstruction(const uint16_t currentOpcode){
     char *message = malloc(45);
 
-    uint8_t xRegIndex = (currentOpcode & 0x0F00) >> 8;
-    uint8_t yRegIndex = (currentOpcode & 0x00F0) >> 4;
+    const uint8_t xRegIndex = (currentOpcode & 0x0F00) >> 8;
+    const uint8_t yRegIndex = (currentOpcode & 0x00F0) >> 4;
 
-    uint8_t nn = (opcode & 0x00FF); //low byte
-    uint16_t nnn = (opcode & 0x0FFF); //low 12 bits
+    const uint8_t nn = (opcode & 0x00FF); //low byte
+    const int16_t nnn = (opcode & 0x0FFF); //low 12 bits
 
     switch(currentOpcode & 0xF000){
         case 0x0000:

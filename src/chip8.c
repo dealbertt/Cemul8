@@ -24,7 +24,7 @@
 
 
 //CHIP-8 specifications
-uint16_t opcode; //the operation code of the instruction
+uint16_t opcode; //the operation code of the instructiouint16_t n
 uint8_t memory[MEMORY]; //the total memory of the chip-8
 uint8_t V[16]; //all the general purpose registers
 
@@ -814,6 +814,7 @@ SDL_Texture *display10Instructions(){
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
     SDL_RenderClear(objects.renderer);
 
+    TTF_SetFontSize(objects.font, 25.0);
     int lineHeight = TTF_GetFontLineSkip(objects.font);
     char *currentInstruction;
     SDL_Color color = {255, 255, 255, 255};
@@ -821,14 +822,14 @@ SDL_Texture *display10Instructions(){
 
     uint16_t secondPc = pc - 2;
     for(int i = 0; i < 40; i += 2){
-        uint16_t currentOpcode = (memory[secondPc + i] << 8) | (memory[secondPc + i + 1]);
-        currentInstruction = getLongerInstruction(currentOpcode);
+        const uint16_t currentOpcode = (memory[secondPc + i] << 8) | (memory[secondPc + i + 1]);
+        currentInstruction = getLongerInstruction(currentOpcode, secondPc + i);
 
         //Rendered the text of one instruction
         SDL_Surface *surface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
         SDL_Texture *currentInstructionTexture = SDL_CreateTextureFromSurface(objects.renderer, surface);
 
-        SDL_FRect rect = {
+        const SDL_FRect rect = {
             0
             , y
             , surface->w 
@@ -839,7 +840,7 @@ SDL_Texture *display10Instructions(){
         SDL_DestroyTexture(currentInstructionTexture);
         free(currentInstruction);
 
-        y += lineHeight;
+        y += lineHeight + 7;
     }
 
     SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.instructiontitleRect);
@@ -847,124 +848,127 @@ SDL_Texture *display10Instructions(){
     return targetTexture;
 }
 
-char *getLongerInstruction(const uint16_t currentOpcode){
-    char *message = malloc(45);
+char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc){
+    char *message = malloc(60); // enough space for PC + description
+
+    if (!message) return NULL;
 
     const uint8_t xRegIndex = (currentOpcode & 0x0F00) >> 8;
     const uint8_t yRegIndex = (currentOpcode & 0x00F0) >> 4;
+    const uint8_t nn = currentOpcode & 0x00FF;
+    const uint16_t nnn = currentOpcode & 0x0FFF;
 
-    const uint8_t nn = (opcode & 0x00FF); //low byte
-    const int16_t nnn = (opcode & 0x0FFF); //low 12 bits
-
-    switch(currentOpcode & 0xF000){
+    switch (currentOpcode & 0xF000) {
         case 0x0000:
-            switch(currentOpcode & 0x0F00){
+            switch (currentOpcode & 0x0FFF) {
                 case 0x00E0:
-                    snprintf(message, 45, "CLR SCRN");
+                    snprintf(message, 60, "0x%03X: CLR SCRN", secondPc);
                     break;
-
                 case 0x00EE:
-                    snprintf(message, 45, "RET");
+                    snprintf(message, 60, "0x%03X: RET", secondPc);
                     break;
                 default:
-                    snprintf(message, 45, "MCHN CD");
+                    snprintf(message, 60, "0x%03X: MCHN CD", secondPc);
                     break;
             }
             break;
 
         case 0x1000:
-            snprintf(message, 45, "JMP 0x%04X", nnn);
+            snprintf(message, 60, "0x%03X: JMP 0x%03X", secondPc, nnn);
             break;
 
         case 0x2000:
-            snprintf(message, 45, "EXEC 0x%04X", nnn);
+            snprintf(message, 60, "0x%03X: CALL 0x%03X", secondPc, nnn);
             break;
 
         case 0x3000:
+            snprintf(message, 60, "0x%03X: SKP V[%d] == 0x%02X", secondPc, xRegIndex, nn);
+            break;
+
         case 0x4000:
-            snprintf(message, 45, "SKP V[%d] 0x%04X", xRegIndex, nnn);
+            snprintf(message, 60, "0x%03X: SKP V[%d] != 0x%02X", secondPc, xRegIndex, nn);
             break;
 
         case 0x5000:
-            snprintf(message, 45, "SKP V[%d] V[%d]", xRegIndex, yRegIndex);
+            snprintf(message, 60, "0x%03X: SKP V[%d] == V[%d]", secondPc, xRegIndex, yRegIndex);
             break;
 
         case 0x6000:
-            snprintf(message, 45, "STR 0x%04X V[%d]", nn, xRegIndex);
+            snprintf(message, 60, "0x%03X: STR 0x%02X -> V[%d]", secondPc, nn, xRegIndex);
             break;
 
         case 0x7000:
-            snprintf(message, 45, "ADD 0x%04X V[%d]", nn, xRegIndex);
+            snprintf(message, 60, "0x%03X: ADD 0x%02X -> V[%d]", secondPc, nn, xRegIndex);
             break;
 
         case 0x8000:
-            switch(currentOpcode & 0x000F){
-                case 0x0000:
-                    snprintf(message, 45, "STR V[%d] V[%d]", yRegIndex, xRegIndex);
+            switch (currentOpcode & 0x000F) {
+                case 0x0:
+                    snprintf(message, 60, "0x%03X: V[%d] = V[%d]", secondPc, xRegIndex, yRegIndex);
                     break;
-
-                case 0x0001:
-                    snprintf(message, 45, " V[%d] OR V[%d]", xRegIndex, yRegIndex);
+                case 0x1:
+                    snprintf(message, 60, "0x%03X: V[%d] |= V[%d]", secondPc, xRegIndex, yRegIndex);
                     break;
-
-                case 0x0002:
-                    snprintf(message, 45, " V[%d] AND V[%d]", xRegIndex, yRegIndex);
+                case 0x2:
+                    snprintf(message, 60, "0x%03X: V[%d] &= V[%d]", secondPc, xRegIndex, yRegIndex);
                     break;
-
-                case 0x0003:
-                    snprintf(message, 45, " V[%d] XOR V[%d]", xRegIndex, yRegIndex);
+                case 0x3:
+                    snprintf(message, 60, "0x%03X: V[%d] ^= V[%d]", secondPc, xRegIndex, yRegIndex);
                     break;
-
-                case 0x0004:
-                    snprintf(message, 45, " V[%d] XOR V[%d]", xRegIndex, yRegIndex);
+                case 0x4:
+                    snprintf(message, 60, "0x%03X: V[%d] += V[%d]", secondPc, xRegIndex, yRegIndex);
                     break;
-
-                case 0x0007:
-                case 0x0005:
-                    snprintf(message, 45, "ADD V[%d] V[%d]", yRegIndex, xRegIndex);
+                case 0x5:
+                    snprintf(message, 60, "0x%03X: V[%d] -= V[%d]", secondPc, xRegIndex, yRegIndex);
                     break;
-
-                case 0x000E:
-                case 0x0006:
-                    snprintf(message, 45, "SHFT V[%d]", xRegIndex);
+                case 0x6:
+                    snprintf(message, 60, "0x%03X: V[%d] >>= 1", secondPc, xRegIndex);
+                    break;
+                case 0x7:
+                    snprintf(message, 60, "0x%03X: V[%d] - V[%d]", secondPc, xRegIndex, yRegIndex);
+                    break;
+                case 0xE:
+                    snprintf(message, 60, "0x%03X: V[%d] <<= 1", secondPc, xRegIndex);
                     break;
                 default:
-                    snprintf(message, 45, "Unkonwn opcode");
+                    snprintf(message, 60, "0x%03X: UNKNOWN OPCODE", secondPc);
                     break;
-
             }
             break;
+
         case 0x9000:
-            snprintf(message, 45, "SKP V[%d]", xRegIndex);
+            snprintf(message, 60, "0x%03X: SKP V[%d] != V[%d]", secondPc, xRegIndex, yRegIndex);
             break;
 
         case 0xA000:
-            snprintf(message, 45, "STR 0x%04X I", nnn);
+            snprintf(message, 60, "0x%03X: I = 0x%03X", secondPc, nnn);
             break;
 
         case 0xB000:
-            snprintf(message, 45, "JMP 0x%04X + V[0]", nnn);
+            snprintf(message, 60, "0x%03X: JMP 0x%03X + V[0]", secondPc, nnn);
             break;
 
         case 0xC000:
-            snprintf(message, 45, "RNDM V[%d]", xRegIndex);
+            snprintf(message, 60, "0x%03X: V[%d] = RAND & 0x%02X", secondPc, xRegIndex, nn);
             break;
 
         case 0xD000:
-            snprintf(message, 45, "DRW V[%d], V[%d]", xRegIndex, yRegIndex);
+            snprintf(message, 60, "0x%03X: DRW V[%d], V[%d]", secondPc, xRegIndex, yRegIndex);
             break;
 
         case 0xE000:
-            snprintf(message, 45, "SKP V[%d]", xRegIndex);
+            snprintf(message, 60, "0x%03X: SKP V[%d]", secondPc, xRegIndex);
             break;
 
         case 0xF000:
-            snprintf(message, 45, "SKP V[%d]", xRegIndex);
+            snprintf(message, 60, "0x%03X: FX?? V[%d]", secondPc, xRegIndex);
             break;
+
         default:
-            snprintf(message, 45, "Unkonwn opcode");
+            snprintf(message, 60, "0x%03X: UNKNOWN OPCODE", secondPc);
             break;
     }
+
     return message;
 }
 
@@ -988,6 +992,7 @@ SDL_Texture *renderControlPanel(){
             int keyIndex = row * 4 + col;
             char keyPadCode[5];
             SDL_Color color = {255, 255, 255, 255}; //white
+
             if(keyPad[keyIndex] != 0){
                 color.b = 0;
                 color.g = 0;
@@ -997,7 +1002,7 @@ SDL_Texture *renderControlPanel(){
             SDL_Surface *keySurface = TTF_RenderText_Solid(objects.font, keyPadCode, strlen(keyPadCode), color); 
             SDL_Texture *keyTexture = SDL_CreateTextureFromSurface(objects.renderer, keySurface);
 
-            SDL_FRect keyRect = {
+            const SDL_FRect keyRect = {
                 x
                     , y 
                     , keySurface->w 
@@ -1014,6 +1019,5 @@ SDL_Texture *renderControlPanel(){
 
     //set the target back to the renderer
     SDL_SetRenderTarget(objects.renderer, NULL);
-
     return targetTexture;
 }

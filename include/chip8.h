@@ -59,6 +59,6 @@ int renderFrame();
 
 SDL_Texture *display10Instructions();
 SDL_Texture *renderControlPanel();
-char *getLongerInstruction(uint16_t currentOpcode);
+char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc);
 
 #endif

@@ -484,7 +484,7 @@ void emulateCycle(){
                 uint8_t startX = x;
                 uint8_t startY = y;
                 uint8_t height = n;
-                static bool test = false;
+                //static bool test = false;
 
 
                 V[0xF] = 0;
@@ -512,7 +512,9 @@ void emulateCycle(){
                         }
                     }
                 }
+                /*
                 if(x == 110 && y == 50){
+
                     printf("TEST STARTED\n");
                     test = true;
                 }
@@ -537,6 +539,7 @@ void emulateCycle(){
                     test = false;
                 }
 
+                */
                 drawFlag = true;
                 break;
             }
@@ -796,18 +799,29 @@ int renderFrame(){
     //The entire instruction panel
     SDL_Texture *instructionTexture = display10Instructions();
 
-    SDL_FRect instructionPanelRect = {0
+    //Create the rect for the entire instruction panel
+    SDL_FRect instructionPanelRect = {
+        0
         , 0
         , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
         , (SCREEN_HEIGHT * globalConfig->scalingFactor)};
 
+    //Render the entire instruction panel
     SDL_RenderTexture(objects.renderer, instructionTexture, NULL, &instructionPanelRect);
-    SDL_DestroyTexture(instructionTexture);
 
     //Border for the instruction Panel
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
     SDL_RenderRect(objects.renderer, &instructionPanelRect);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); // white border
+
+    SDL_Texture *controlPanel = renderControlPanel();
+    SDL_FRect controlRect = {
+        (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
+        , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0
+        , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
+        , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0
+    };
+    SDL_RenderTexture(objects.renderer, controlPanel, NULL, &controlRect);
 
     //update the CHIP-8 screen if needed
     uint32_t pixels[2048];
@@ -821,7 +835,11 @@ int renderFrame(){
     }
 
     //Rendering the chip-8 screen
-    SDL_FRect mainWindowRect = {instructionPanelRect.w, 0, (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0, (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0};
+    SDL_FRect mainWindowRect = {
+        instructionPanelRect.w
+            , 0
+            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
+            , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0};
 
     SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
     
@@ -831,15 +849,17 @@ int renderFrame(){
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
     //Border of the title
-    SDL_SetRenderTarget(objects.renderer, instructionTexture);
 
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
-    SDL_RenderRect(objects.renderer, &objects.titleRect);
+    SDL_RenderRect(objects.renderer, &objects.instructiontitleRect);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
-    SDL_SetRenderTarget(objects.renderer, NULL);
+
 
     SDL_RenderPresent(objects.renderer);
+
+    SDL_DestroyTexture(instructionTexture);
+    SDL_DestroyTexture(controlPanel);
     return 0;
 }
 
@@ -860,7 +880,7 @@ SDL_Texture *display10Instructions(){
     int lineHeight = TTF_GetFontLineSkip(objects.font);
     char *currentInstruction;
     SDL_Color color = {255, 255, 255, 255};
-    int y = objects.titleRect.h;
+    int y = objects.instructiontitleRect.h;
 
     uint16_t secondPc = pc - 2;
     for(int i = 0; i < 40; i += 2){
@@ -873,7 +893,7 @@ SDL_Texture *display10Instructions(){
 
         SDL_DestroySurface(surface);
 
-        SDL_FRect rect = {0, y, (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0, 50};
+        SDL_FRect rect = {0, y, (SCREEN_WIDTH * globalConfig->scalingFactor) / 5.0, 50};
         SDL_RenderTexture(objects.renderer, currentInstructionTexture, NULL, &rect);
 
         SDL_DestroyTexture(currentInstructionTexture);
@@ -882,7 +902,7 @@ SDL_Texture *display10Instructions(){
         y += lineHeight;
     }
 
-    SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.titleRect);
+    SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.instructiontitleRect);
     SDL_SetRenderTarget(objects.renderer, NULL);
 
     return targetTexture;
@@ -1009,3 +1029,22 @@ char *getLongerInstruction(uint16_t currentOpcode){
     return message;
 }
 
+
+SDL_Texture *renderControlPanel(){
+    SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer
+            , SDL_PIXELFORMAT_RGBA8888
+            , SDL_TEXTUREACCESS_TARGET
+            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2
+            , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2);
+
+    SDL_SetRenderTarget(objects.renderer, targetTexture);
+    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
+    SDL_RenderClear(objects.renderer);
+
+    //Render the title of the control panel
+    SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);
+
+    //set the target back to the renderer
+    SDL_SetRenderTarget(objects.renderer, NULL);
+    return targetTexture;
+}

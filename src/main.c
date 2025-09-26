@@ -25,14 +25,10 @@ TODO:
 - Also have to implement audio at some point (f*ck)
 - Im sure there is a much better way of actually rendering all those instructions, but for now, it gets the job done, need to maybe create a small font to properly fit all 20 instructions
 
-- Oh yeah and maybe fix the wrapping qirk
-
-
  */
-
 Config *globalConfig = NULL;
 
-emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL,  .instructionPanelTitle = NULL};
+emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL,  .instructionPanelTitle = NULL, .controlsPanelTitle = NULL};
 
 
 
@@ -87,7 +83,7 @@ int main(int argc, char **argv){
     }
 
     char fontPath[40] = "fonts/FiraCodeNerdFont-Regular.ttf";
-    objects.font = TTF_OpenFont(fontPath, 40);
+    objects.font = TTF_OpenFont(fontPath, 50);
     if(objects.font == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to open the font: %s\n", SDL_GetError());
         cleanup();
@@ -103,17 +99,29 @@ int main(int argc, char **argv){
 
     SDL_DestroySurface(titleSurface);
 
-    objects.titleRect.x = 0;
-    objects.titleRect.y = 0;
-    objects.titleRect.w = (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0 + 0.5;
-    objects.titleRect.h = 50;
-    SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.titleRect);
+    objects.instructiontitleRect.x = 0;
+    objects.instructiontitleRect.y = 0;
+    objects.instructiontitleRect.w = (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0 + 0.5;
+    objects.instructiontitleRect.h = 50;
+    SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.instructiontitleRect);
+
+    char controlTitleString[15] = "CONTROLS";
+    SDL_Surface *controlSurface = TTF_RenderText_Solid(objects.font, controlTitleString, strlen(controlTitleString), color);
+    objects.controlsPanelTitle = SDL_CreateTextureFromSurface(objects.renderer, controlSurface);
+    SDL_DestroySurface(controlSurface);
+
+    objects.controlTitleRect.x = (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0;
+    objects.controlTitleRect.y = (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0 + 20;
+    objects.controlTitleRect.w = (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0;
+    objects.controlTitleRect.h = 50;
+    SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);
 
                                                         
-    initialize(); //initializes ll the chip-8 components
+    initialize(); //initializes all the chip-8 components
     if(loadProgram(objects.filename) == -1){
         cleanup();
     }
+
     SDL_Delay(1000);
     simulateCpu();
 

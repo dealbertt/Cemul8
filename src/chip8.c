@@ -814,14 +814,6 @@ int renderFrame(){
     SDL_RenderRect(objects.renderer, &instructionPanelRect);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); // white border
 
-    SDL_Texture *controlPanel = renderControlPanel();
-    SDL_FRect controlRect = {
-        (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
-        , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0
-        , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
-        , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0
-    };
-    SDL_RenderTexture(objects.renderer, controlPanel, NULL, &controlRect);
 
     //update the CHIP-8 screen if needed
     uint32_t pixels[2048];
@@ -842,6 +834,15 @@ int renderFrame(){
             , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0};
 
     SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
+
+    SDL_Texture *controlPanel = renderControlPanel();
+    SDL_FRect controlRect = {
+        instructionPanelRect.w
+        , mainWindowRect.h 
+        , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
+        , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0
+    };
+    SDL_RenderTexture(objects.renderer, controlPanel, NULL, &controlRect);
     
     //Border for the chip8 screen
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
@@ -891,11 +892,14 @@ SDL_Texture *display10Instructions(){
         SDL_Surface *surface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
         SDL_Texture *currentInstructionTexture = SDL_CreateTextureFromSurface(objects.renderer, surface);
 
-        SDL_DestroySurface(surface);
-
-        SDL_FRect rect = {0, y, (SCREEN_WIDTH * globalConfig->scalingFactor) / 5.0, 50};
+        SDL_FRect rect = {
+            0
+            , y
+            , surface->w 
+            , surface->h};
         SDL_RenderTexture(objects.renderer, currentInstructionTexture, NULL, &rect);
 
+        SDL_DestroySurface(surface);
         SDL_DestroyTexture(currentInstructionTexture);
         free(currentInstruction);
 
@@ -928,7 +932,7 @@ char *getLongerInstruction(uint16_t currentOpcode){
                     snprintf(message, 45, "RET");
                     break;
                 default:
-                    snprintf(message, 45, "Unkonwn opcode");
+                    snprintf(message, 45, "MCHN CD");
                     break;
             }
             break;
@@ -938,7 +942,7 @@ char *getLongerInstruction(uint16_t currentOpcode){
             break;
 
         case 0x2000:
-            snprintf(message, 45, "EXEC ADDR 0x%04X", nnn);
+            snprintf(message, 45, "EXEC 0x%04X", nnn);
             break;
 
         case 0x3000:
@@ -951,7 +955,7 @@ char *getLongerInstruction(uint16_t currentOpcode){
             break;
 
         case 0x6000:
-            snprintf(message, 45, "STR  0x%04X V[%d]", nn, xRegIndex);
+            snprintf(message, 45, "STR 0x%04X V[%d]", nn, xRegIndex);
             break;
 
         case 0x7000:
@@ -1037,9 +1041,6 @@ SDL_Texture *renderControlPanel(){
             , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2
             , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2);
 
-    SDL_SetRenderTarget(objects.renderer, targetTexture);
-    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255);
-    SDL_RenderClear(objects.renderer);
 
     //Render the title of the control panel
     SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);

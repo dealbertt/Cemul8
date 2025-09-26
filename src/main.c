@@ -83,7 +83,7 @@ int main(int argc, char **argv){
     }
 
     char fontPath[40] = "fonts/FiraCodeNerdFont-Regular.ttf";
-    objects.font = TTF_OpenFont(fontPath, 50);
+    objects.font = TTF_OpenFont(fontPath, 40);
     if(objects.font == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to open the font: %s\n", SDL_GetError());
         cleanup();
@@ -97,24 +97,26 @@ int main(int argc, char **argv){
     SDL_Surface *titleSurface = TTF_RenderText_Solid(objects.font, title, strlen(title), color);
     objects.instructionPanelTitle = SDL_CreateTextureFromSurface(objects.renderer, titleSurface);
 
-    SDL_DestroySurface(titleSurface);
 
     objects.instructiontitleRect.x = 0;
     objects.instructiontitleRect.y = 0;
-    objects.instructiontitleRect.w = (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0 + 0.5;
-    objects.instructiontitleRect.h = 50;
+    objects.instructiontitleRect.w = titleSurface->w;
+    objects.instructiontitleRect.h = titleSurface->h;
     SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.instructiontitleRect);
+    SDL_DestroySurface(titleSurface);
 
     char controlTitleString[15] = "CONTROLS";
+
     SDL_Surface *controlSurface = TTF_RenderText_Solid(objects.font, controlTitleString, strlen(controlTitleString), color);
     objects.controlsPanelTitle = SDL_CreateTextureFromSurface(objects.renderer, controlSurface);
-    SDL_DestroySurface(controlSurface);
+
 
     objects.controlTitleRect.x = (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0;
-    objects.controlTitleRect.y = (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0 + 20;
-    objects.controlTitleRect.w = (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0;
-    objects.controlTitleRect.h = 50;
+    objects.controlTitleRect.y = (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0;
+    objects.controlTitleRect.w = controlSurface->w;
+    objects.controlTitleRect.h = controlSurface->h;
     SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);
+    SDL_DestroySurface(controlSurface);
 
                                                         
     initialize(); //initializes all the chip-8 components

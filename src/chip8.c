@@ -850,7 +850,6 @@ int renderFrame(){
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
     //Border of the title
-
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
     SDL_RenderRect(objects.renderer, &objects.instructiontitleRect);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
@@ -871,7 +870,7 @@ SDL_Texture *display10Instructions(){
     SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer
             , SDL_PIXELFORMAT_RGBA8888
             , SDL_TEXTUREACCESS_TARGET
-            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4
+            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
             , (SCREEN_HEIGHT * globalConfig->scalingFactor));
 
     SDL_SetRenderTarget(objects.renderer, targetTexture);
@@ -1038,14 +1037,39 @@ SDL_Texture *renderControlPanel(){
     SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer
             , SDL_PIXELFORMAT_RGBA8888
             , SDL_TEXTUREACCESS_TARGET
-            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2
-            , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2);
+            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
+            , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0);
 
+    //set the target back to the renderer
+    SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);
 
     //Render the title of the control panel
-    SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);
+    int x = objects.controlTitleRect.x;
+
+    for(int i = 0; i < 16; i++){
+        char keyPadCode[5];
+        SDL_Color color = {255, 255, 255, 255}; //white
+        if(keyPad[i] != 0){
+            color.b = 0;
+            color.g = 0;
+        }
+        snprintf(keyPadCode, sizeof(keyPadCode), "%01X", i);
+
+        SDL_Surface *keySurface = TTF_RenderText_Solid(objects.font, keyPadCode, strlen(keyPadCode), color); 
+        SDL_Texture *keyTexture = SDL_CreateTextureFromSurface(objects.renderer, keySurface);
+
+        SDL_FRect keyRect = {
+            x
+            , objects.controlTitleRect.y + 50
+            , keySurface->w 
+            , keySurface->h};
+
+        SDL_RenderTexture(objects.renderer, keyTexture, NULL, &keyRect);
+        x += keySurface->w;
+    }
 
     //set the target back to the renderer
     SDL_SetRenderTarget(objects.renderer, NULL);
+
     return targetTexture;
 }

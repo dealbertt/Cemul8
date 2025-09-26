@@ -7,6 +7,5 @@
  
 unsigned char generateRandomNN(int mask);
 
-
 void cleanup();
 #endif

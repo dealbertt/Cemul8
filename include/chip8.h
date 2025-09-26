@@ -17,9 +17,11 @@ typedef struct{
     SDL_Renderer *renderer;
     SDL_Texture *mainScreenTexture;
     SDL_Texture *instructionPanelTitle;
-    SDL_Texture *controlsPanelTitle;
     SDL_FRect instructiontitleRect;
+    SDL_Texture *controlsPanelTitle;
     SDL_FRect controlTitleRect;
+    SDL_Texture *internalsTitlePanel;
+    SDL_FRect internalTitleRect;
     TTF_Font *font;
 
     char filename[150];
@@ -57,8 +59,9 @@ void checkInternals();
 
 int renderFrame();
 
-SDL_Texture *displayInstructionPanel();
-SDL_Texture *renderControlPanel();
+int renderInstructionPanel();
+int renderControlPanel();
+int renderInternalPanel();
 char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc);
 
 #endif

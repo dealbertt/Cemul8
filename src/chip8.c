@@ -730,7 +730,9 @@ int renderFrame(){
     //Clear the screen
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
     SDL_RenderClear(objects.renderer);
+    SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
 
+    //Rendering the chip-8 screen
     //update the CHIP-8 screen if needed
     if (drawFlag) {
         uint32_t pixels[2048];
@@ -740,18 +742,8 @@ int renderFrame(){
 
         SDL_UpdateTexture(objects.mainScreenTexture, NULL, pixels, 64 * sizeof(Uint32));
         drawFlag = false;
-        return 0;
     }
 
-    //The entire instruction panel
-    displayInstructionPanel();
-
-    //Create the rect for the entire instruction panel
-
-    //Border for the instruction Panel
-
-
-    //Rendering the chip-8 screen
     SDL_FRect mainWindowRect = {
              (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
             , 0
@@ -759,86 +751,113 @@ int renderFrame(){
             , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0};
 
     SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
-
-    renderControlPanel();
-    
-    //Border for the chip8 screen
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
     SDL_RenderRect(objects.renderer, &mainWindowRect);
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
+
+    //The entire instruction panel
+    renderInstructionPanel();
+
+    //The keypad Control panel
+    renderControlPanel();
+
+    renderInternalPanel();
+    //Border for the instruction Panel
+    //Border for the chip8 screen
 
     //Border of the title
     //SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
     //SDL_RenderRect(objects.renderer, &objects.instructiontitleRect);
     //SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
-
+    //finally update the screen :)
     SDL_RenderPresent(objects.renderer);
-
-
     return 0;
 }
 
 
-SDL_Texture *displayInstructionPanel(){
-
-    //the entire instruction panel texture
-    SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer
-            , SDL_PIXELFORMAT_RGBA8888
-            , SDL_TEXTUREACCESS_TARGET
-            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
-            , (SCREEN_HEIGHT * globalConfig->scalingFactor));
-
-
-    TTF_SetFontSize(objects.font, 25.0);
-    int lineHeight = TTF_GetFontLineSkip(objects.font);
-    char *currentInstruction;
-    SDL_Color color = {255, 255, 255, 255};
-    int y = objects.instructiontitleRect.h;
-
-    uint16_t secondPc = pc - 2;
-    for(int i = 0; i < 40; i += 2){
-        const uint16_t currentOpcode = (memory[secondPc + i] << 8) | (memory[secondPc + i + 1]);
-        currentInstruction = getLongerInstruction(currentOpcode, secondPc + i);
-
-        //Rendered the text of one instruction
-        SDL_Surface *surface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
-        SDL_Texture *currentInstructionTexture = SDL_CreateTextureFromSurface(objects.renderer, surface);
-
-        const SDL_FRect rect = {
-            0
-            , y
-            , surface->w 
-            , surface->h};
-        SDL_RenderTexture(objects.renderer, currentInstructionTexture, NULL, &rect);
-
-        SDL_DestroySurface(surface);
-        SDL_DestroyTexture(currentInstructionTexture);
-        free(currentInstruction);
-
-        y += lineHeight + 7;
-    }
-
+int renderInstructionPanel(){
     SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.instructiontitleRect);
 
-    SDL_FRect instructionPanelRect = {
+    TTF_SetFontSize(objects.font, 25.0);
+    SDL_Color color = {255, 255, 255, 255};
+
+    uint16_t secondPc = pc - 2;
+    const uint16_t currentOpcode = (memory[secondPc] << 8) | (memory[secondPc + 1]);
+    char *currentInstruction = getLongerInstruction(currentOpcode, secondPc);
+
+    SDL_Surface *surface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
+    SDL_Texture *currentInstructionTexture = SDL_CreateTextureFromSurface(objects.renderer, surface);
+
+    SDL_DestroySurface(surface);
+    free(currentInstruction);
+
+    const SDL_FRect rect = {
         0
-        , 0
-        , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
-        , (SCREEN_HEIGHT * globalConfig->scalingFactor)};
+            , objects.instructiontitleRect.h 
+            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
+            , 60};
+
+    SDL_RenderTexture(objects.renderer, currentInstructionTexture, NULL, &rect);
+
+    SDL_DestroyTexture(currentInstructionTexture);
+
 
     //Render the entire instruction panel
-    SDL_RenderTexture(objects.renderer, targetTexture, NULL, &instructionPanelRect);
 
     //paint the border
-    SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
-    SDL_RenderRect(objects.renderer, &instructionPanelRect);
-    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); // white border
-                                                            //
-    SDL_DestroyTexture(targetTexture);
-    return targetTexture;
+                                                            
+    return 0; 
 }
 
+int renderControlPanel(){
+    //set the target back to the renderer
+    SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);
+
+    //Render the title of the control panel
+    int y = objects.controlTitleRect.y + 50;
+
+    TTF_SetFontSize(objects.font, 60); 
+    for(int row = 0; row < 4; row ++){
+        int x = objects.controlTitleRect.x - 50;
+
+        for(int col = 0; col < 4; col++){
+            int keyIndex = row * 4 + col;
+            char keyPadCode[5];
+            SDL_Color color = {255, 255, 255, 255}; //white
+
+            if(keyPad[keyIndex] != 0){
+                color.b = 0;
+                color.g = 0;
+            }
+            snprintf(keyPadCode, sizeof(keyPadCode), "%01X", keyIndex);
+
+            SDL_Surface *keySurface = TTF_RenderText_Solid(objects.font, keyPadCode, strlen(keyPadCode), color); 
+            SDL_Texture *keyTexture = SDL_CreateTextureFromSurface(objects.renderer, keySurface);
+
+            const SDL_FRect keyRect = {
+                    x
+                    , y 
+                    , keySurface->w 
+                    , keySurface->h};
+
+            SDL_RenderTexture(objects.renderer, keyTexture, NULL, &keyRect);
+            x += keySurface->w + 50;
+
+            SDL_DestroySurface(keySurface);
+            SDL_DestroyTexture(keyTexture);
+        }
+        y += 60;
+    }
+    return 0; 
+}
+
+int renderInternalPanel(){
+
+    SDL_RenderTexture(objects.renderer, objects.internalsTitlePanel, NULL, &objects.internalTitleRect);
+
+    return 0;
+}
 char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc){
     char *message = malloc(60); // enough space for PC + description
 
@@ -964,60 +983,3 @@ char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc
 }
 
 
-SDL_Texture *renderControlPanel(){
-    SDL_Texture *targetTexture = SDL_CreateTexture(objects.renderer
-            , SDL_PIXELFORMAT_RGBA8888
-            , SDL_TEXTUREACCESS_TARGET
-            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
-            , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0);
-
-
-    //set the target back to the renderer
-    SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);
-
-    //Render the title of the control panel
-    int y = objects.controlTitleRect.y + 50;
-
-    for(int row = 0; row < 4; row ++){
-        int x = (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0;
-
-        for(int col = 0; col < 4; col++){
-            int keyIndex = row * 4 + col;
-            char keyPadCode[5];
-            SDL_Color color = {255, 255, 255, 255}; //white
-
-            if(keyPad[keyIndex] != 0){
-                color.b = 0;
-                color.g = 0;
-            }
-            snprintf(keyPadCode, sizeof(keyPadCode), "%01X", keyIndex);
-
-            SDL_Surface *keySurface = TTF_RenderText_Solid(objects.font, keyPadCode, strlen(keyPadCode), color); 
-            SDL_Texture *keyTexture = SDL_CreateTextureFromSurface(objects.renderer, keySurface);
-
-            const SDL_FRect keyRect = {
-                x
-                    , y 
-                    , keySurface->w 
-                    , keySurface->h};
-
-            SDL_RenderTexture(objects.renderer, keyTexture, NULL, &keyRect);
-            x += keySurface->w + 5;
-
-            SDL_DestroySurface(keySurface);
-            SDL_DestroyTexture(keyTexture);
-        }
-        y += 50;
-    }
-
-    //set the target back to the renderer
-    SDL_FRect controlRect = {
-             (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
-            , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0
-            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
-            , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0
-    };
-    SDL_RenderTexture(objects.renderer, targetTexture, NULL, &controlRect);
-    SDL_DestroyTexture(targetTexture);
-    return targetTexture;
-}

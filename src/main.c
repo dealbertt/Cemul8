@@ -28,7 +28,7 @@ TODO:
  */
 Config *globalConfig = NULL;
 
-emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL,  .instructionPanelTitle = NULL, .controlsPanelTitle = NULL};
+emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL,  .instructionPanelTitle = NULL, .controlsPanelTitle = NULL, .internalsTitlePanel = NULL};
 
 
 
@@ -58,7 +58,7 @@ int main(int argc, char **argv){
         return -1;
     }
 
-    if(!SDL_CreateWindowAndRenderer("emul8", SCREEN_WIDTH * globalConfig->scalingFactor, SCREEN_HEIGHT * globalConfig->scalingFactor, SDL_WINDOW_RESIZABLE, &objects.window, &objects.renderer)){
+    if(!SDL_CreateWindowAndRenderer("Cemul8", SCREEN_WIDTH * globalConfig->scalingFactor, SCREEN_HEIGHT * globalConfig->scalingFactor, SDL_WINDOW_RESIZABLE, &objects.window, &objects.renderer)){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error on SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
         return -1;
     }
@@ -92,9 +92,9 @@ int main(int argc, char **argv){
     SDL_Color color = {255, 255, 255, 255};
 
 
-    char title[15] = "INSTRUCTIONS";
+    char instructionTitle[15] = "INSTRUCTIONS";
 
-    SDL_Surface *titleSurface = TTF_RenderText_Solid(objects.font, title, strlen(title), color);
+    SDL_Surface *titleSurface = TTF_RenderText_Solid(objects.font, instructionTitle, strlen(instructionTitle), color);
     objects.instructionPanelTitle = SDL_CreateTextureFromSurface(objects.renderer, titleSurface);
 
 
@@ -111,12 +111,25 @@ int main(int argc, char **argv){
     objects.controlsPanelTitle = SDL_CreateTextureFromSurface(objects.renderer, controlSurface);
 
 
-    objects.controlTitleRect.x = (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0;
+    objects.controlTitleRect.x = (SCREEN_WIDTH *globalConfig->scalingFactor) / 2.0 - 100;
     objects.controlTitleRect.y = (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0;
     objects.controlTitleRect.w = controlSurface->w;
     objects.controlTitleRect.h = controlSurface->h;
     SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);
     SDL_DestroySurface(controlSurface);
+
+    char internalTitle[15] = "INTERNALS";
+    SDL_Surface *internalSurface = TTF_RenderText_Solid(objects.font, internalTitle, strlen(internalTitle), color);
+    objects.internalsTitlePanel = SDL_CreateTextureFromSurface(objects.renderer, internalSurface);
+
+    objects.internalTitleRect.x = (SCREEN_WIDTH * globalConfig->scalingFactor) * 0.75;
+    objects.internalTitleRect.y = 0;
+    objects.internalTitleRect.w = internalSurface->w;
+    objects.internalTitleRect.h = internalSurface->h;
+
+    SDL_RenderTexture(objects.renderer, objects.internalsTitlePanel, NULL, &objects.internalTitleRect);
+    SDL_DestroySurface(internalSurface);
+
 
                                                         
     initialize(); //initializes all the chip-8 components
@@ -128,6 +141,10 @@ int main(int argc, char **argv){
     simulateCpu();
 
     TTF_CloseFont(objects.font);
+    SDL_DestroyTexture(objects.mainScreenTexture);
+    SDL_DestroyTexture(objects.instructionPanelTitle);
+    SDL_DestroyTexture(objects.controlsPanelTitle);
+    SDL_DestroyTexture(objects.internalsTitlePanel);
 
     cleanup();
     return 0;

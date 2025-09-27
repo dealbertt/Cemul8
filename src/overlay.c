@@ -1,6 +1,8 @@
 #include <SDL3/SDL_render.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../include/overlay.h"
 #include "../include/config.h"
 typedef struct{
@@ -10,9 +12,16 @@ typedef struct{
     uint8_t keyCode;
 }keyPadTexture;
 
+typedef struct{
+    SDL_Texture *instTexture;
+    uint16_t designatedOpcode;
+    char *description;
+}instructionTexture;
 int xIncrement;
 
 keyPadTexture keyTextures[16];
+
+instructionTexture displayedInstructions[20];
 
 int initPanelTitles(emulObjects *objects, int scalingFactor){
     objects->mainScreenTexture = SDL_CreateTexture(objects->renderer, 
@@ -27,8 +36,6 @@ int initPanelTitles(emulObjects *objects, int scalingFactor){
 
 
     SDL_SetTextureScaleMode(objects->mainScreenTexture, SDL_SCALEMODE_NEAREST);
-
-
 
     char fontPath[40] = "fonts/FiraCodeNerdFont-Regular.ttf";
     objects->font = TTF_OpenFont(fontPath, 40);
@@ -83,9 +90,21 @@ int initPanelTitles(emulObjects *objects, int scalingFactor){
 }
 
 int initControlPanel(emulObjects *objects, Chip8 *chip){
-    int y = objects->controlTitleRect.y + 50;
+    SDL_Color color = {255, 255, 255, 255};
+    char instructions[150] = "F1: STOP/RESUME EXECUTION | F6: EXECUTE ONE INSTRUCTION";
+    TTF_SetFontSize(objects->font, 20);
+    SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects->font, instructions, strlen(instructions), color);
+
+    objects->controlInstructions = SDL_CreateTextureFromSurface(objects->renderer, instructionSurface);
+
+    objects->controlInstructionsRect.x = (SCREEN_WIDTH * 25) / 4.0;
+    objects->controlInstructionsRect.y = objects->controlTitleRect.y + 50;
+    objects->controlInstructionsRect.w = instructionSurface->w;
+    objects->controlInstructionsRect.h = instructionSurface->h;
+    SDL_RenderTexture(objects->renderer, objects->controlInstructions, NULL, &objects->controlInstructionsRect);
+    int y = objects->controlTitleRect.y + 150;
     for(int row = 0; row < 4; row ++){
-        int x = objects->controlTitleRect.x - 50;
+        int x = objects->controlTitleRect.x - 30;
 
         for(int col = 0; col < 4; col++){
             int keyIndex = row * 4 + col;
@@ -135,24 +154,19 @@ int renderInstructionPanel(emulObjects objects, Chip8 *chip, int scalingFactor){
     SDL_Surface *surface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
     SDL_Texture *currentInstructionTexture = SDL_CreateTextureFromSurface(objects.renderer, surface);
 
-    SDL_DestroySurface(surface);
     free(currentInstruction);
 
     const SDL_FRect rect = {
         0
             , objects.instructiontitleRect.h 
-            , (SCREEN_WIDTH * scalingFactor) / 4.0
+            , surface->w 
             , 60};
 
     SDL_RenderTexture(objects.renderer, currentInstructionTexture, NULL, &rect);
 
+    SDL_DestroySurface(surface);
     SDL_DestroyTexture(currentInstructionTexture);
 
-
-    //Render the entire instruction panel
-
-    //paint the border
-                                                            
     return 0; 
 }
 
@@ -160,6 +174,7 @@ int renderControlPanel(emulObjects *objects, Chip8 *chip){
     //set the target back to the renderer
     SDL_RenderTexture(objects->renderer, objects->controlsPanelTitle, NULL, &objects->controlTitleRect);
 
+    SDL_RenderTexture(objects->renderer, objects->controlInstructions, NULL, &objects->controlInstructionsRect);
     //Render the title of the control panel
     int y = objects->controlTitleRect.y + 50;
 

@@ -22,6 +22,10 @@ typedef struct{
     SDL_FRect controlTitleRect;
     SDL_Texture *internalsTitlePanel;
     SDL_FRect internalTitleRect;
+
+    SDL_Texture *controlInstructions;
+    SDL_FRect controlInstructionsRect;
+
     TTF_Font *font;
     char filename[150];
 }emulObjects;

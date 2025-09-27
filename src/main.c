@@ -14,6 +14,7 @@
 #include "../include/chip8.h"
 #include "../include/config.h"
 #include "../include/functions.h"
+#include "../include/overlay.h"
 
 
 /*
@@ -62,75 +63,14 @@ int main(int argc, char **argv){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error on SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
         return -1;
     }
-    objects.mainScreenTexture = SDL_CreateTexture(objects.renderer, 
-            SDL_PIXELFORMAT_ARGB8888, 
-            SDL_TEXTUREACCESS_TARGET, 
-            SCREEN_WIDTH, SCREEN_HEIGHT);
-
-    if(objects.mainScreenTexture == NULL){
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when creating mainScreenTexture: %s\n", SDL_GetError());
-        return -1;
-    }
-
-
-    SDL_SetTextureScaleMode(objects.mainScreenTexture, SDL_SCALEMODE_NEAREST);
-
-
 
     if(!TTF_Init()){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error with TTF_Init: %s\n", SDL_GetError());
         cleanup();
     }
 
-    char fontPath[40] = "fonts/FiraCodeNerdFont-Regular.ttf";
-    objects.font = TTF_OpenFont(fontPath, 40);
-    if(objects.font == NULL){
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to open the font: %s\n", SDL_GetError());
-        cleanup();
-    }
 
-    SDL_Color color = {255, 255, 255, 255};
-
-
-    char instructionTitle[15] = "INSTRUCTIONS";
-
-    SDL_Surface *titleSurface = TTF_RenderText_Solid(objects.font, instructionTitle, strlen(instructionTitle), color);
-    objects.instructionPanelTitle = SDL_CreateTextureFromSurface(objects.renderer, titleSurface);
-
-
-    objects.instructiontitleRect.x = 0;
-    objects.instructiontitleRect.y = 0;
-    objects.instructiontitleRect.w = titleSurface->w;
-    objects.instructiontitleRect.h = titleSurface->h;
-    SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.instructiontitleRect);
-    SDL_DestroySurface(titleSurface);
-
-    char controlTitleString[15] = "CONTROLS";
-
-    SDL_Surface *controlSurface = TTF_RenderText_Solid(objects.font, controlTitleString, strlen(controlTitleString), color);
-    objects.controlsPanelTitle = SDL_CreateTextureFromSurface(objects.renderer, controlSurface);
-
-
-    objects.controlTitleRect.x = (SCREEN_WIDTH *globalConfig->scalingFactor) / 2.0 - 100;
-    objects.controlTitleRect.y = (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0;
-    objects.controlTitleRect.w = controlSurface->w;
-    objects.controlTitleRect.h = controlSurface->h;
-    SDL_RenderTexture(objects.renderer, objects.controlsPanelTitle, NULL, &objects.controlTitleRect);
-    SDL_DestroySurface(controlSurface);
-
-    char internalTitle[15] = "INTERNALS";
-    SDL_Surface *internalSurface = TTF_RenderText_Solid(objects.font, internalTitle, strlen(internalTitle), color);
-    objects.internalsTitlePanel = SDL_CreateTextureFromSurface(objects.renderer, internalSurface);
-
-    objects.internalTitleRect.x = (SCREEN_WIDTH * globalConfig->scalingFactor) * 0.75;
-    objects.internalTitleRect.y = 0;
-    objects.internalTitleRect.w = internalSurface->w;
-    objects.internalTitleRect.h = internalSurface->h;
-
-    SDL_RenderTexture(objects.renderer, objects.internalsTitlePanel, NULL, &objects.internalTitleRect);
-    SDL_DestroySurface(internalSurface);
-
-
+    initPanelTitles(&objects, globalConfig->scalingFactor);
                                                         
     initialize(); //initializes all the chip-8 components
     if(loadProgram(objects.filename) == -1){

@@ -5,8 +5,11 @@
 #include "config.h"
 
 int renderInstructionPanel(emulObjects objects, Chip8 *chip, int scalingFactor);
-int renderControlPanel(emulObjects objects, Chip8 * chip);
+int renderControlPanel(emulObjects *objects, Chip8 *chip);
 int renderInternalPanel(emulObjects objects, Chip8 *chip);
 char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc);
+
+int initControlPanel(emulObjects *objects, Chip8 *chip);
+int initPanelTitles(emulObjects *objects, int scalingFactor);
 
 #endif

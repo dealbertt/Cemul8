@@ -78,6 +78,7 @@ extern emulObjects objects;
 extern Config *globalConfig;
 
 void initialize(){
+
     chip.pc = 0x200; // Set program counter to 0x200
     chip.opcode = 0; // Reset op code
     chip.I = 0;      // Reset I
@@ -109,6 +110,7 @@ void initialize(){
     chip.delay_timer = 0;
     chip.sound_timer = 0;
 
+    initControlPanel(&objects, &chip);
 }
 
 int loadProgram(const char *fileName){
@@ -693,7 +695,7 @@ int renderFrame(){
     renderInstructionPanel(objects, &chip, globalConfig->scalingFactor);
 
     //The keypad Control panel
-    renderControlPanel(objects, &chip);
+    renderControlPanel(&objects, &chip);
 
     renderInternalPanel(objects, &chip);
     //Border for the instruction Panel

@@ -8,7 +8,9 @@
 typedef struct{
     SDL_Texture *keyTexture;
     SDL_Color color;
+
     SDL_FRect keyRect;
+
     uint8_t keyCode;
 }keyPadTexture;
 
@@ -17,11 +19,24 @@ typedef struct{
     uint16_t designatedOpcode;
     char *description;
 }instructionTexture;
+
+typedef struct{
+    SDL_Texture *indexTexture;
+    SDL_Texture *valueTexture;
+
+    SDL_FRect indexRect;
+    SDL_FRect valueRect;
+
+    uint8_t previousValue;
+}registerTexture;
+
 int xIncrement;
 
 keyPadTexture keyTextures[16];
 
 instructionTexture displayedInstructions[20];
+
+registerTexture registerArray[16];
 
 int initPanelTitles(emulObjects *objects, int scalingFactor){
     objects->mainScreenTexture = SDL_CreateTexture(objects->renderer, 
@@ -73,7 +88,7 @@ int initPanelTitles(emulObjects *objects, int scalingFactor){
     SDL_RenderTexture(objects->renderer, objects->controlsPanelTitle, NULL, &objects->controlTitleRect);
     SDL_DestroySurface(controlSurface);
 
-    char internalTitle[15] = "INTERNALS";
+    char internalTitle[15] = "REGISTERS";
     SDL_Surface *internalSurface = TTF_RenderText_Solid(objects->font, internalTitle, strlen(internalTitle), color);
     objects->internalsTitlePanel = SDL_CreateTextureFromSurface(objects->renderer, internalSurface);
 
@@ -90,6 +105,7 @@ int initPanelTitles(emulObjects *objects, int scalingFactor){
 }
 
 int initControlPanel(emulObjects *objects, Chip8 *chip){
+    //Render the instructions for the control panel
     SDL_Color color = {255, 255, 255, 255};
     char instructions[150] = "F1: STOP/RESUME EXECUTION | F6: EXECUTE ONE INSTRUCTION";
     TTF_SetFontSize(objects->font, 20);
@@ -102,6 +118,12 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
     objects->controlInstructionsRect.w = instructionSurface->w;
     objects->controlInstructionsRect.h = instructionSurface->h;
     SDL_RenderTexture(objects->renderer, objects->controlInstructions, NULL, &objects->controlInstructionsRect);
+    SDL_DestroySurface(instructionSurface);
+    //---------------------------
+    //
+    //Render the keypad for the first time 
+    
+    TTF_SetFontSize(objects->font, 20);
     int y = objects->controlTitleRect.y + 150;
     for(int row = 0; row < 4; row ++){
         int x = objects->controlTitleRect.x - 30;
@@ -122,6 +144,7 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
                 printf("Null surface on initControlPanel!\n");
                 exit(1);
             }
+
             keyTextures[keyIndex].keyTexture = SDL_CreateTextureFromSurface(objects->renderer, keySurface);
 
              keyTextures[keyIndex].keyRect.x = x; 
@@ -205,12 +228,83 @@ int renderControlPanel(emulObjects *objects, Chip8 *chip){
     return 0; 
 }
 
-int renderInternalPanel(emulObjects objects, Chip8 *chip){
+int initRegisterPanel(emulObjects *objects, Chip8 *chip){
+    TTF_SetFontSize(objects->font, 20);
+    SDL_Color color = {255, 255, 255, 255};
+    int y = objects->internalTitleRect.h + 20;
+    for(int row = 0; row < 4; row++){
+        int x = objects->internalTitleRect.x;
+        for(int col = 0; col < 4; col++){
+            //Render the index Textures
+            int regIndex = row * 4 + col;
+            char indexStr[10];
+            snprintf(indexStr, sizeof(indexStr), "V%01X: ", regIndex);
+            SDL_Surface *indexSurface = TTF_RenderText_Solid(objects->font, indexStr, strlen(indexStr), color);
+            registerArray[regIndex].indexTexture = SDL_CreateTextureFromSurface(objects->renderer, indexSurface);
+            registerArray[regIndex].indexRect.x = x; 
+            registerArray[regIndex].indexRect.y = y; 
+            registerArray[regIndex].indexRect.w = indexSurface->w; 
+            registerArray[regIndex].indexRect.h = indexSurface->h; 
+            x += 100;
 
-    SDL_RenderTexture(objects.renderer, objects.internalsTitlePanel, NULL, &objects.internalTitleRect);
 
+            SDL_RenderTexture(objects->renderer, registerArray[regIndex].indexTexture, NULL, &registerArray[regIndex].indexRect);
+            //---------------------
+            char valueStr[5];
+            snprintf(valueStr, sizeof(valueStr), " %02X", chip->V[regIndex]);
+
+            SDL_Surface *valueSurface = TTF_RenderText_Solid(objects->font, valueStr, strlen(valueStr), color);
+
+            registerArray[regIndex].valueTexture = SDL_CreateTextureFromSurface(objects->renderer, valueSurface);
+            registerArray[regIndex].valueRect.x = registerArray[regIndex].indexRect.x + 20;
+            registerArray[regIndex].valueRect.y = registerArray[regIndex].indexRect.y;
+            registerArray[regIndex].valueRect.w = valueSurface->w;
+            registerArray[regIndex].valueRect.h = valueSurface->h;
+            SDL_RenderTexture(objects->renderer, registerArray[regIndex].valueTexture, NULL, &registerArray[regIndex].valueRect);
+
+
+
+            //Render the value Textures
+            SDL_DestroySurface(indexSurface);
+            SDL_DestroySurface(valueSurface);
+
+        }
+        y += 50;
+    }
     return 0;
 }
+
+int renderInternalPanel(emulObjects *objects, Chip8 *chip){
+
+    SDL_RenderTexture(objects->renderer, objects->internalsTitlePanel, NULL, &objects->internalTitleRect);
+
+    SDL_Color color = {255, 255, 255, 255};
+    for(int row = 0; row < 4; row++){
+        for(int col = 0; col < 4; col++){
+            int regIndex = row * 4 + col;
+
+            SDL_RenderTexture(objects->renderer, registerArray[regIndex].indexTexture, NULL, &registerArray[regIndex].indexRect);
+
+            if(chip->V[regIndex] != registerArray[regIndex].previousValue){
+                // i have to update the value
+                SDL_DestroyTexture(registerArray[regIndex].valueTexture);
+
+                char valueStr[5];
+                snprintf(valueStr, sizeof(valueStr), " %02X", chip->V[regIndex]);
+
+                SDL_Surface *valueSurface = TTF_RenderText_Solid(objects->font, valueStr, strlen(valueStr), color);
+
+            registerArray[regIndex].valueTexture = SDL_CreateTextureFromSurface(objects->renderer, valueSurface);
+
+            registerArray[regIndex].previousValue = chip->V[regIndex];
+            }
+
+            SDL_RenderTexture(objects->renderer, registerArray[regIndex].valueTexture, NULL, &registerArray[regIndex].valueRect);
+        }
+    }
+    return 0;
+}
+
 char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc){
     char *message = malloc(60); // enough space for PC + description
 

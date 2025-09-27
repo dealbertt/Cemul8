@@ -111,6 +111,7 @@ void initialize(){
     chip.sound_timer = 0;
 
     initControlPanel(&objects, &chip);
+    initRegisterPanel(&objects, &chip);
 }
 
 int loadProgram(const char *fileName){
@@ -697,7 +698,7 @@ int renderFrame(){
     //The keypad Control panel
     renderControlPanel(&objects, &chip);
 
-    renderInternalPanel(objects, &chip);
+    renderInternalPanel(&objects, &chip);
     //Border for the instruction Panel
     //Border for the chip8 screen
 

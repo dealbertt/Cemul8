@@ -112,6 +112,7 @@ void initialize(){
 
     initControlPanel(&objects, &chip);
     initRegisterPanel(&objects, &chip);
+
 }
 
 int loadProgram(const char *fileName){

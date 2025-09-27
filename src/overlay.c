@@ -1,3 +1,5 @@
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <stdio.h>
@@ -29,6 +31,8 @@ typedef struct{
 
     uint8_t previousValue;
 }registerTexture;
+
+SDL_Texture *hexCharTextures[256];
 
 int xIncrement;
 
@@ -229,9 +233,13 @@ int renderControlPanel(emulObjects *objects, Chip8 *chip){
 }
 
 int initRegisterPanel(emulObjects *objects, Chip8 *chip){
-    TTF_SetFontSize(objects->font, 20);
+    TTF_SetFontSize(objects->font, 25);
+
     SDL_Color color = {255, 255, 255, 255};
+
     int y = objects->internalTitleRect.h + 20;
+
+    initRegisterTextures(objects->renderer, objects->font);
     for(int row = 0; row < 4; row++){
         int x = objects->internalTitleRect.x;
         for(int col = 0; col < 4; col++){
@@ -240,36 +248,53 @@ int initRegisterPanel(emulObjects *objects, Chip8 *chip){
             char indexStr[10];
             snprintf(indexStr, sizeof(indexStr), "V%01X: ", regIndex);
             SDL_Surface *indexSurface = TTF_RenderText_Solid(objects->font, indexStr, strlen(indexStr), color);
+
             registerArray[regIndex].indexTexture = SDL_CreateTextureFromSurface(objects->renderer, indexSurface);
             registerArray[regIndex].indexRect.x = x; 
             registerArray[regIndex].indexRect.y = y; 
             registerArray[regIndex].indexRect.w = indexSurface->w; 
             registerArray[regIndex].indexRect.h = indexSurface->h; 
-            x += 100;
 
 
             SDL_RenderTexture(objects->renderer, registerArray[regIndex].indexTexture, NULL, &registerArray[regIndex].indexRect);
             //---------------------
-            char valueStr[5];
-            snprintf(valueStr, sizeof(valueStr), " %02X", chip->V[regIndex]);
-
-            SDL_Surface *valueSurface = TTF_RenderText_Solid(objects->font, valueStr, strlen(valueStr), color);
-
-            registerArray[regIndex].valueTexture = SDL_CreateTextureFromSurface(objects->renderer, valueSurface);
-            registerArray[regIndex].valueRect.x = registerArray[regIndex].indexRect.x + 20;
+            registerArray[regIndex].valueRect.x = registerArray[regIndex].indexRect.x + 50;
             registerArray[regIndex].valueRect.y = registerArray[regIndex].indexRect.y;
-            registerArray[regIndex].valueRect.w = valueSurface->w;
-            registerArray[regIndex].valueRect.h = valueSurface->h;
-            SDL_RenderTexture(objects->renderer, registerArray[regIndex].valueTexture, NULL, &registerArray[regIndex].valueRect);
+            registerArray[regIndex].valueRect.w = 30;
+            registerArray[regIndex].valueRect.h = 30;
+            registerArray[regIndex].previousValue = -1;
 
 
 
             //Render the value Textures
             SDL_DestroySurface(indexSurface);
-            SDL_DestroySurface(valueSurface);
 
+            x += 100;
         }
         y += 50;
+    }
+    return 0;
+}
+
+int initRegisterTextures(SDL_Renderer *renderer, TTF_Font *font){
+    SDL_Color color = {255, 255, 255, 255};
+    TTF_SetFontSize(font, 25);
+
+    for(int i = 0; i < 256; i++){
+        char hex[4];
+        snprintf(hex, sizeof(hex), "%02X", i);
+        
+        SDL_Surface *hexSurface = TTF_RenderText_Solid(font, hex, strlen(hex), color);
+        if(hexSurface == NULL){
+                SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create hexSurface: %s", SDL_GetError()); 
+                return -1;
+        }
+
+        hexCharTextures[i] = SDL_CreateTextureFromSurface(renderer, hexSurface);
+        if(hexCharTextures[i] == NULL){
+                SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create hexCharTextures[%d]: %s", i, SDL_GetError()); 
+                return -1;
+        }
     }
     return 0;
 }
@@ -277,8 +302,6 @@ int initRegisterPanel(emulObjects *objects, Chip8 *chip){
 int renderInternalPanel(emulObjects *objects, Chip8 *chip){
 
     SDL_RenderTexture(objects->renderer, objects->internalsTitlePanel, NULL, &objects->internalTitleRect);
-
-    SDL_Color color = {255, 255, 255, 255};
     for(int row = 0; row < 4; row++){
         for(int col = 0; col < 4; col++){
             int regIndex = row * 4 + col;
@@ -287,19 +310,11 @@ int renderInternalPanel(emulObjects *objects, Chip8 *chip){
 
             if(chip->V[regIndex] != registerArray[regIndex].previousValue){
                 // i have to update the value
-                SDL_DestroyTexture(registerArray[regIndex].valueTexture);
-
-                char valueStr[5];
-                snprintf(valueStr, sizeof(valueStr), " %02X", chip->V[regIndex]);
-
-                SDL_Surface *valueSurface = TTF_RenderText_Solid(objects->font, valueStr, strlen(valueStr), color);
-
-            registerArray[regIndex].valueTexture = SDL_CreateTextureFromSurface(objects->renderer, valueSurface);
-
-            registerArray[regIndex].previousValue = chip->V[regIndex];
+                SDL_RenderTexture(objects->renderer,
+                  hexCharTextures[chip->V[regIndex]],
+                  NULL,
+                  &registerArray[regIndex].valueRect);
             }
-
-            SDL_RenderTexture(objects->renderer, registerArray[regIndex].valueTexture, NULL, &registerArray[regIndex].valueRect);
         }
     }
     return 0;

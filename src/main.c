@@ -70,7 +70,10 @@ int main(int argc, char **argv){
     }
 
 
-    initPanelTitles(&objects, globalConfig->scalingFactor);
+    if(initPanelTitles(&objects, globalConfig->scalingFactor) == 1){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error with initPanelTitles");
+        cleanup();
+    }
                                                         
     initialize(); //initializes all the chip-8 components
     if(loadProgram(objects.filename) == -1){

@@ -53,13 +53,13 @@ int initPanelTitles(emulObjects *objects, int scalingFactor){
         return -1;
     }
 
-
     SDL_SetTextureScaleMode(objects->mainScreenTexture, SDL_SCALEMODE_NEAREST);
 
     char fontPath[40] = "fonts/FiraCodeNerdFont-Regular.ttf";
     objects->font = TTF_OpenFont(fontPath, 40);
     if(objects->font == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to open the font: %s\n", SDL_GetError());
+        SDL_DestroyTexture(objects->mainScreenTexture);
         return -1;
     }
 
@@ -69,7 +69,24 @@ int initPanelTitles(emulObjects *objects, int scalingFactor){
     char instructionTitle[15] = "INSTRUCTIONS";
 
     SDL_Surface *titleSurface = TTF_RenderText_Solid(objects->font, instructionTitle, strlen(instructionTitle), color);
+    if(titleSurface == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create titleSurface: %s\n", SDL_GetError());
+
+        SDL_DestroyTexture(objects->mainScreenTexture);
+        TTF_CloseFont(objects->font);
+        return -1;
+
+    }
+
     objects->instructionPanelTitle = SDL_CreateTextureFromSurface(objects->renderer, titleSurface);
+    if(objects->instructionPanelTitle == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create instructionPanelTitle: %s\n", SDL_GetError());
+
+        SDL_DestroyTexture(objects->mainScreenTexture);
+        TTF_CloseFont(objects->font);
+        SDL_DestroySurface(titleSurface);
+        return -1;
+    }
 
 
     objects->instructiontitleRect.x = 0;
@@ -82,7 +99,25 @@ int initPanelTitles(emulObjects *objects, int scalingFactor){
     char controlTitleString[15] = "CONTROLS";
 
     SDL_Surface *controlSurface = TTF_RenderText_Solid(objects->font, controlTitleString, strlen(controlTitleString), color);
+    if(controlSurface == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create controlSurface: %s\n", SDL_GetError());
+
+        SDL_DestroyTexture(objects->mainScreenTexture);
+        TTF_CloseFont(objects->font);
+        SDL_DestroySurface(titleSurface);
+        return -1;
+    }
+
     objects->controlsPanelTitle = SDL_CreateTextureFromSurface(objects->renderer, controlSurface);
+    if(objects->controlsPanelTitle == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create controlsPanelTitle: %s\n", SDL_GetError());
+
+        SDL_DestroyTexture(objects->mainScreenTexture);
+        TTF_CloseFont(objects->font);
+        SDL_DestroySurface(titleSurface);
+        SDL_DestroySurface(controlSurface);
+        return -1;
+    }
 
 
     objects->controlTitleRect.x = (SCREEN_WIDTH * scalingFactor) / 2.0 - 100;
@@ -94,7 +129,26 @@ int initPanelTitles(emulObjects *objects, int scalingFactor){
 
     char internalTitle[15] = "REGISTERS";
     SDL_Surface *internalSurface = TTF_RenderText_Solid(objects->font, internalTitle, strlen(internalTitle), color);
+    if(internalSurface == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create internalSurface: %s\n", SDL_GetError());
+
+        SDL_DestroyTexture(objects->mainScreenTexture);
+        TTF_CloseFont(objects->font);
+        SDL_DestroySurface(titleSurface);
+        SDL_DestroySurface(controlSurface);
+        return -1;
+    }
     objects->internalsTitlePanel = SDL_CreateTextureFromSurface(objects->renderer, internalSurface);
+    if(objects->internalsTitlePanel == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create internalsTitlePanel: %s\n", SDL_GetError());
+
+        SDL_DestroyTexture(objects->mainScreenTexture);
+        TTF_CloseFont(objects->font);
+        SDL_DestroySurface(titleSurface);
+        SDL_DestroySurface(controlSurface);
+        SDL_DestroySurface(internalSurface);
+        return -1;
+    }
 
     objects->internalTitleRect.x = (SCREEN_WIDTH * scalingFactor) * 0.75;
     objects->internalTitleRect.y = 0;
@@ -103,8 +157,6 @@ int initPanelTitles(emulObjects *objects, int scalingFactor){
 
     SDL_RenderTexture(objects->renderer, objects->internalsTitlePanel, NULL, &objects->internalTitleRect);
     SDL_DestroySurface(internalSurface);
-
-
     return 0;
 }
 
@@ -114,6 +166,10 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
     char instructions[150] = "F1: STOP/RESUME EXECUTION | F6: EXECUTE ONE INSTRUCTION";
     TTF_SetFontSize(objects->font, 20);
     SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects->font, instructions, strlen(instructions), color);
+    if(instructionSurface == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create internalsTitlePanel: %s\n", SDL_GetError());
+        return -1;
+    }
 
     objects->controlInstructions = SDL_CreateTextureFromSurface(objects->renderer, instructionSurface);
 

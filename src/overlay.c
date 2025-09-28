@@ -201,8 +201,8 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
 
             SDL_Surface *keySurface = TTF_RenderText_Solid(objects->font, keyPadCode, strlen(keyPadCode), color); 
             if(keySurface == NULL){
-                printf("Null surface on initControlPanel!\n");
-                exit(1);
+                SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error creating keySurface: %s\n", SDL_GetError());
+                return -1;
             }
 
             keyTextures[keyIndex].keyTexture = SDL_CreateTextureFromSurface(objects->renderer, keySurface);

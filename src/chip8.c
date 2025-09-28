@@ -691,7 +691,6 @@ int renderFrame(){
     SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
     SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
     SDL_RenderRect(objects.renderer, &mainWindowRect);
-    SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
 
     //The entire instruction panel
     renderInstructionPanel(objects, &chip, globalConfig->scalingFactor);

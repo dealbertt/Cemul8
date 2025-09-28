@@ -19,12 +19,9 @@
 
 /*
 TODO:
-- Maybe separate the different rendering of the textures into different functions so that its not as messy as it is right now
-
-- Also have to think about moving some code to other files, because the text rendering and stuff shouldnt be in the chip8.c file
+- Becuase the program is already loaded in memory, i can pretty much pre-render all the instructions on the program, and then store them in an array
 
 - Also have to implement audio at some point (f*ck)
-- Im sure there is a much better way of actually rendering all those instructions, but for now, it gets the job done, need to maybe create a small font to properly fit all 20 instructions
 
  */
 Config *globalConfig = NULL;

@@ -110,9 +110,6 @@ void initialize(){
     chip.delay_timer = 0;
     chip.sound_timer = 0;
 
-    initControlPanel(&objects, &chip);
-    initRegisterPanel(&objects, &chip);
-
 }
 
 int loadProgram(const char *fileName){
@@ -124,6 +121,7 @@ int loadProgram(const char *fileName){
     fseek(ptr, 0, SEEK_END); //Go to the end of the file
 
     long fileSize = ftell(ptr); //Use ftell to get the size of said file
+    printf("Size of the file: %lu\n", fileSize);
 
     rewind(ptr); //Go back to the beggining of the file using rewind, first time i have ever heard of it
 
@@ -146,6 +144,8 @@ int loadProgram(const char *fileName){
 }
 
 void simulateCpu(){
+    initializeAllRendering(&objects, &chip);
+
     Uint64 frequency = SDL_GetPerformanceFrequency();
     Uint64 lastCycleTime = SDL_GetPerformanceCounter();
     Uint64 lastTimerTick = SDL_GetPerformanceCounter();
@@ -693,7 +693,7 @@ int renderFrame(){
     SDL_RenderRect(objects.renderer, &mainWindowRect);
 
     //The entire instruction panel
-    renderInstructionPanel(objects, &chip, globalConfig->scalingFactor);
+    renderInstructionPanel(&objects, &chip, globalConfig->scalingFactor);
 
     //The keypad Control panel
     renderControlPanel(&objects, &chip);

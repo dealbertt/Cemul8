@@ -18,8 +18,8 @@ typedef struct{
 
 typedef struct{
     SDL_Texture *instTexture;
+    SDL_FRect instRect;
     uint16_t designatedOpcode;
-    char *description;
 }instructionTexture;
 
 typedef struct{
@@ -32,15 +32,23 @@ typedef struct{
     uint8_t previousValue;
 }registerTexture;
 
+
 SDL_Texture *hexCharTextures[256];
 
 int xIncrement;
 
 keyPadTexture keyTextures[16];
 
-instructionTexture displayedInstructions[20];
+instructionTexture preRenderedInstructions[MEMORY - 0x200 + 1];
 
 registerTexture registerArray[16];
+
+int initializeAllRendering(emulObjects *objects, Chip8 *chip){
+    initControlPanel(objects, chip);
+    initRegisterPanel(objects, chip);
+    preRenderInstructions(objects, chip);
+    return 0;
+}
 
 int initPanelTitles(emulObjects *objects, int scalingFactor){
     objects->mainScreenTexture = SDL_CreateTexture(objects->renderer, 
@@ -224,35 +232,6 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
     return 0;
 }
 
-int renderInstructionPanel(emulObjects objects, Chip8 *chip, int scalingFactor){
-    SDL_RenderTexture(objects.renderer, objects.instructionPanelTitle, NULL, &objects.instructiontitleRect);
-
-    TTF_SetFontSize(objects.font, 25.0);
-    SDL_Color color = {255, 255, 255, 255};
-
-    uint16_t secondPc = chip->pc - 2;
-    const uint16_t currentOpcode = (chip->memory[secondPc] << 8) | (chip->memory[secondPc + 1]);
-    char *currentInstruction = getLongerInstruction(currentOpcode, secondPc);
-
-    SDL_Surface *surface = TTF_RenderText_Solid(objects.font, currentInstruction, strlen(currentInstruction), color);
-    SDL_Texture *currentInstructionTexture = SDL_CreateTextureFromSurface(objects.renderer, surface);
-
-    free(currentInstruction);
-
-    const SDL_FRect rect = {
-        0
-            , objects.instructiontitleRect.h 
-            , surface->w 
-            , 60};
-
-    SDL_RenderTexture(objects.renderer, currentInstructionTexture, NULL, &rect);
-
-    SDL_DestroySurface(surface);
-    SDL_DestroyTexture(currentInstructionTexture);
-
-    return 0; 
-}
-
 int renderControlPanel(emulObjects *objects, Chip8 *chip){
     //set the target back to the renderer
     SDL_RenderTexture(objects->renderer, objects->controlsPanelTitle, NULL, &objects->controlTitleRect);
@@ -376,6 +355,35 @@ int renderInternalPanel(emulObjects *objects, Chip8 *chip){
     return 0;
 }
 
+int renderInstructionPanel(emulObjects *objects, Chip8 *chip, int scalingFactor){
+    SDL_RenderTexture(objects->renderer, objects->instructionPanelTitle, NULL, &objects->instructiontitleRect);
+    int y = objects->instructiontitleRect.h;
+    for(int i = 0; i < 40; i += 2){
+        preRenderedInstructions[((chip->pc - 0x200) / 2) + i].instRect.y = y;
+        SDL_RenderTexture(objects->renderer, preRenderedInstructions[((chip->pc - 0x200) / 2) + i].instTexture, NULL, &preRenderedInstructions[((chip->pc - 0x200) / 2 ) + i].instRect);
+        y += 40;
+    }
+    return 0; 
+}
+
+int preRenderInstructions(emulObjects *objects, Chip8 *chip){
+    SDL_Color color = {255, 255, 255, 255};
+    TTF_SetFontSize(objects->font, 25.0);
+    //chip->pc = 0x200
+    for(uint16_t pc = 0x200; pc < MEMORY - 1; pc += 2){
+        const uint16_t opcode = (chip->memory[pc] << 8) | (chip->memory[pc + 1]);
+        char *instruction = getLongerInstruction(opcode, pc); 
+
+        SDL_Surface *surface = TTF_RenderText_Solid(objects->font, instruction, strlen(instruction), color);
+        preRenderedInstructions[(pc - 0x200) / 2].instTexture = SDL_CreateTextureFromSurface(objects->renderer, surface);      
+        preRenderedInstructions[(pc - 0x200) / 2].instRect.w = surface->w;
+        preRenderedInstructions[(pc - 0x200) / 2].instRect.h = surface->h;
+        
+        SDL_DestroySurface(surface);
+        free(instruction);
+    }
+    return 0;
+}
 char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc){
     char *message = malloc(60); // enough space for PC + description
 

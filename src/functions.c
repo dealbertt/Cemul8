@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <stdlib.h>
 
 #include <SDL3/SDL.h>
@@ -22,14 +22,9 @@ unsigned char generateRandomNN(int mask){
     return randomNumber & mask;
 }
 
-int drawScalatedPixel(int x, int y, SDL_Renderer *renderer, SDL_Color color){
-    SDL_FRect drawRect = {x * globalConfig->scalingFactor, y * globalConfig->scalingFactor, globalConfig->scalingFactor, globalConfig->scalingFactor};
-    SDL_SetRenderDrawColor(renderer, color.r ,color.g, color.b, color.a); 
-    SDL_RenderFillRect(renderer , &drawRect); 
-    return 0;
-}
 void cleanup(){
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Quitting emul8...\n");
+    TTF_Quit();
     SDL_Quit();
     exit(0);
 }

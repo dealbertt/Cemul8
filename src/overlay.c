@@ -50,7 +50,7 @@ int initializeAllRendering(emulObjects *objects, Chip8 *chip){
     return 0;
 }
 
-int initPanelTitles(emulObjects *objects, int scalingFactor){
+int initPanelTitles(emulObjects *objects, const int scalingFactor){
     objects->mainScreenTexture = SDL_CreateTexture(objects->renderer, 
             SDL_PIXELFORMAT_ARGB8888, 
             SDL_TEXTUREACCESS_TARGET, 
@@ -135,7 +135,7 @@ int initPanelTitles(emulObjects *objects, int scalingFactor){
     SDL_RenderTexture(objects->renderer, objects->controlsPanelTitle, NULL, &objects->controlTitleRect);
     SDL_DestroySurface(controlSurface);
 
-    char internalTitle[15] = "REGISTERS";
+    char internalTitle[15] = "INTERNALS";
     SDL_Surface *internalSurface = TTF_RenderText_Solid(objects->font, internalTitle, strlen(internalTitle), color);
     if(internalSurface == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create internalSurface: %s\n", SDL_GetError());
@@ -232,7 +232,7 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
     return 0;
 }
 
-int renderControlPanel(emulObjects *objects, Chip8 *chip){
+int renderControlPanel(const emulObjects *objects, const Chip8 *chip){
     //set the target back to the renderer
     SDL_RenderTexture(objects->renderer, objects->controlsPanelTitle, NULL, &objects->controlTitleRect);
 
@@ -267,7 +267,7 @@ int renderControlPanel(emulObjects *objects, Chip8 *chip){
     return 0; 
 }
 
-int initRegisterPanel(emulObjects *objects, Chip8 *chip){
+int initRegisterPanel(const emulObjects *objects, const Chip8 *chip){
     TTF_SetFontSize(objects->font, 25);
 
     SDL_Color color = {255, 255, 255, 255};
@@ -334,7 +334,7 @@ int initRegisterTextures(SDL_Renderer *renderer, TTF_Font *font){
     return 0;
 }
 
-int renderInternalPanel(emulObjects *objects, Chip8 *chip){
+int renderInternalPanel(const emulObjects *objects, const Chip8 *chip){
 
     SDL_RenderTexture(objects->renderer, objects->internalsTitlePanel, NULL, &objects->internalTitleRect);
     for(int row = 0; row < 4; row++){
@@ -355,18 +355,22 @@ int renderInternalPanel(emulObjects *objects, Chip8 *chip){
     return 0;
 }
 
-int renderInstructionPanel(emulObjects *objects, Chip8 *chip, int scalingFactor){
+int renderInstructionPanel(const emulObjects *objects, const Chip8 *chip, int scalingFactor){
     SDL_RenderTexture(objects->renderer, objects->instructionPanelTitle, NULL, &objects->instructiontitleRect);
     int y = objects->instructiontitleRect.h;
-    for(int i = 0; i < 40; i += 2){
+    for(int i = 0; i < 20; i += 1){
         preRenderedInstructions[((chip->pc - 0x200) / 2) + i].instRect.y = y;
         SDL_RenderTexture(objects->renderer, preRenderedInstructions[((chip->pc - 0x200) / 2) + i].instTexture, NULL, &preRenderedInstructions[((chip->pc - 0x200) / 2 ) + i].instRect);
+
+
+        SDL_SetRenderDrawColor(objects->renderer, 255, 255, 255, 255); // white border
+        SDL_RenderRect(objects->renderer, &preRenderedInstructions[(chip->pc - 0x200) / 2].instRect);
         y += 40;
     }
     return 0; 
 }
 
-int preRenderInstructions(emulObjects *objects, Chip8 *chip){
+int preRenderInstructions(const emulObjects *objects, const Chip8 *chip){
     SDL_Color color = {255, 255, 255, 255};
     TTF_SetFontSize(objects->font, 25.0);
     //chip->pc = 0x200

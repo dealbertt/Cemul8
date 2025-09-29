@@ -22,6 +22,7 @@ TODO:
 
 - Also have to implement audio at some point (f*ck)
 
+- cleanup and code improvements
  */
 Config *globalConfig = NULL;
 

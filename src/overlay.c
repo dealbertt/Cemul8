@@ -172,7 +172,7 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
     //Render the instructions for the control panel
     SDL_Color color = {255, 255, 255, 255};
     char instructions[150] = "F1: STOP/RESUME EXECUTION | F6: EXECUTE ONE INSTRUCTION";
-    TTF_SetFontSize(objects->font, 20);
+    TTF_SetFontSize(objects->font, 25);
     SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects->font, instructions, strlen(instructions), color);
     if(instructionSurface == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create internalsTitlePanel: %s\n", SDL_GetError());
@@ -191,8 +191,8 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
     //
     //Render the keypad for the first time 
     
-    TTF_SetFontSize(objects->font, 20);
-    int y = objects->controlTitleRect.y + 150;
+    TTF_SetFontSize(objects->font, 40);
+    int y = objects->controlTitleRect.y + 100;
     for(int row = 0; row < 4; row ++){
         int x = objects->controlTitleRect.x - 30;
 

@@ -84,12 +84,11 @@ int initPanelTitles(emulObjects *objects, const int scalingFactor){
         return -1;
     }
 
-    SDL_Color color = {255, 255, 255, 255};
 
 
     char instructionTitle[15] = "INSTRUCTIONS";
 
-    SDL_Surface *titleSurface = TTF_RenderText_Solid(objects->font, instructionTitle, strlen(instructionTitle), color);
+    SDL_Surface *titleSurface = TTF_RenderText_Solid(objects->font, instructionTitle, strlen(instructionTitle), objects->color);
     if(titleSurface == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create titleSurface: %s\n", SDL_GetError());
 
@@ -119,7 +118,7 @@ int initPanelTitles(emulObjects *objects, const int scalingFactor){
 
     char controlTitleString[15] = "CONTROLS";
 
-    SDL_Surface *controlSurface = TTF_RenderText_Solid(objects->font, controlTitleString, strlen(controlTitleString), color);
+    SDL_Surface *controlSurface = TTF_RenderText_Solid(objects->font, controlTitleString, strlen(controlTitleString), objects->color);
     if(controlSurface == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create controlSurface: %s\n", SDL_GetError());
 
@@ -149,7 +148,7 @@ int initPanelTitles(emulObjects *objects, const int scalingFactor){
     SDL_DestroySurface(controlSurface);
 
     char internalTitle[15] = "INTERNALS";
-    SDL_Surface *internalSurface = TTF_RenderText_Solid(objects->font, internalTitle, strlen(internalTitle), color);
+    SDL_Surface *internalSurface = TTF_RenderText_Solid(objects->font, internalTitle, strlen(internalTitle), objects->color);
     if(internalSurface == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create internalSurface: %s\n", SDL_GetError());
 
@@ -212,7 +211,6 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
         for(int col = 0; col < 4; col++){
             int keyIndex = row * 4 + col;
             char keyPadCode[5];
-            SDL_Color color = {255, 255, 255, 255}; //white
 
             if(chip->keyPad[keyIndex] != 0){
                 color.b = 0;
@@ -266,14 +264,12 @@ int renderControlPanel(const emulObjects *objects, const Chip8 *chip){
             if(chip->keyPad[keyIndex] != 0){
                 SDL_SetRenderDrawColor(objects->renderer, 255, 0, 0, 255);
             }else{
-                SDL_SetRenderDrawColor(objects->renderer, 128, 128, 128, 255);
+                SDL_SetRenderDrawColor(objects->renderer, 0, 0, 0, 255);
             }
             SDL_RenderFillRect(objects->renderer, &keyTextures[keyIndex].keyRect);
 
-
             SDL_RenderTexture(objects->renderer, keyTextures[keyIndex].keyTexture, NULL, &keyTextures[keyIndex].keyRect);
             x += xIncrement;
-
         }
         y += 60;
     }
@@ -283,11 +279,9 @@ int renderControlPanel(const emulObjects *objects, const Chip8 *chip){
 int initRegisterPanel(const emulObjects *objects, const Chip8 *chip){
     TTF_SetFontSize(objects->font, 25);
 
-    SDL_Color color = {255, 255, 255, 255};
-
     int y = objects->internalTitleRect.h + 20;
 
-    initRegisterTextures(objects->renderer, objects->font);
+    initRegisterTextures(objects->renderer, objects->font, objects->color);
     for(int row = 0; row < 4; row++){
         int x = objects->internalTitleRect.x;
         for(int col = 0; col < 4; col++){
@@ -295,7 +289,7 @@ int initRegisterPanel(const emulObjects *objects, const Chip8 *chip){
             int regIndex = row * 4 + col;
             char indexStr[10];
             snprintf(indexStr, sizeof(indexStr), "V%01X: ", regIndex);
-            SDL_Surface *indexSurface = TTF_RenderText_Solid(objects->font, indexStr, strlen(indexStr), color);
+            SDL_Surface *indexSurface = TTF_RenderText_Solid(objects->font, indexStr, strlen(indexStr), objects->color);
 
             registerArray[regIndex].indexTexture = SDL_CreateTextureFromSurface(objects->renderer, indexSurface);
             registerArray[regIndex].indexRect.x = x; 
@@ -324,8 +318,7 @@ int initRegisterPanel(const emulObjects *objects, const Chip8 *chip){
     return 0;
 }
 
-int initRegisterTextures(SDL_Renderer *renderer, TTF_Font *font){
-    SDL_Color color = {255, 255, 255, 255};
+int initRegisterTextures(SDL_Renderer *renderer, TTF_Font *font, SDL_Color color){
     TTF_SetFontSize(font, 25);
 
     for(int i = 0; i < 256; i++){
@@ -371,13 +364,17 @@ int renderInternalPanel(const emulObjects *objects, const Chip8 *chip){
 int renderInstructionPanel(const emulObjects *objects, const Chip8 *chip, int scalingFactor){
     SDL_RenderTexture(objects->renderer, objects->instructionPanelTitle, NULL, &objects->instructiontitleRect);
     int y = objects->instructiontitleRect.h;
+    int baseIndex = ((chip->pc - 0x200) / 2) - 1; 
     for(int i = 0; i < 20; i++){
-        preRenderedInstructions[((chip->pc - 0x200) / 2) + i].instRect.y = y;
-        SDL_RenderTexture(objects->renderer, preRenderedInstructions[((chip->pc - 0x200) / 2) + i].instTexture, NULL, &preRenderedInstructions[((chip->pc - 0x200) / 2 ) + i].instRect);
+        if(baseIndex < 0)
+            baseIndex = 0;
+
+        preRenderedInstructions[baseIndex + i].instRect.y = y;
+        SDL_RenderTexture(objects->renderer, preRenderedInstructions[baseIndex + i].instTexture, NULL, &preRenderedInstructions[baseIndex + i].instRect);
 
 
         SDL_SetRenderDrawColor(objects->renderer, 255, 255, 255, 255); // white border
-        SDL_RenderRect(objects->renderer, &preRenderedInstructions[(chip->pc - 0x200) / 2].instRect);
+        SDL_RenderRect(objects->renderer, &preRenderedInstructions[baseIndex].instRect);
         y += 35;
     }
 
@@ -433,8 +430,6 @@ int initTimerPanel(emulObjects *objects, Chip8 *chip){
     timers->delayTimerValue.w = 30;
     timers->delayTimerValue.h = 30;
 
-    printf("X of delayTimerRect: %f\n", timers->delayTimerRect.x);
-    printf("Y of delayTimerRect: %f\n", timers->delayTimerRect.y);
     return 0;
 }
 
@@ -452,6 +447,7 @@ int renderTimerPanel(const emulObjects *objects, const Chip8 *chip){
 
     return 0;
 }
+
 int preRenderInstructions(const emulObjects *objects, const Chip8 *chip){
     SDL_Color color = {255, 255, 255, 255};
     TTF_SetFontSize(objects->font, 25.0);

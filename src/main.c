@@ -19,7 +19,7 @@
 
 /*
 TODO:
-- Becuase the program is already loaded in memory, i can pretty much pre-render all the instructions on the program, and then store them in an array
+- Reset button
 
 - Also have to implement audio at some point (f*ck)
 

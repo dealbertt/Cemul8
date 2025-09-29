@@ -24,7 +24,7 @@ int initControlPanel(emulObjects *objects, Chip8 *chip);
 int initPanelTitles(emulObjects *objects, const int scalingFactor);
 
 int initRegisterPanel(const emulObjects *objects, const Chip8 *chip);
-int initRegisterTextures(SDL_Renderer *renderer, TTF_Font *font);
+int initRegisterTextures(SDL_Renderer *renderer, TTF_Font *font, SDL_Color color);
 
 int initTimerPanel(emulObjects *objects, Chip8 *chip);
 

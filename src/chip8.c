@@ -659,8 +659,6 @@ int handleRealKeyboard(){
     }
     return 0;
 }
-//
-
 
 
 //function in charge or rendering the entire screen (overlay + CHIP-8 screen)

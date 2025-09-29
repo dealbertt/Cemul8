@@ -358,14 +358,14 @@ int renderInternalPanel(const emulObjects *objects, const Chip8 *chip){
 int renderInstructionPanel(const emulObjects *objects, const Chip8 *chip, int scalingFactor){
     SDL_RenderTexture(objects->renderer, objects->instructionPanelTitle, NULL, &objects->instructiontitleRect);
     int y = objects->instructiontitleRect.h;
-    for(int i = 0; i < 20; i += 1){
+    for(int i = 0; i < 20; i++){
         preRenderedInstructions[((chip->pc - 0x200) / 2) + i].instRect.y = y;
         SDL_RenderTexture(objects->renderer, preRenderedInstructions[((chip->pc - 0x200) / 2) + i].instTexture, NULL, &preRenderedInstructions[((chip->pc - 0x200) / 2 ) + i].instRect);
 
 
         SDL_SetRenderDrawColor(objects->renderer, 255, 255, 255, 255); // white border
         SDL_RenderRect(objects->renderer, &preRenderedInstructions[(chip->pc - 0x200) / 2].instRect);
-        y += 40;
+        y += 35;
     }
     return 0; 
 }

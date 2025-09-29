@@ -1,6 +1,7 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_surface.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,6 +44,18 @@ typedef struct{
     SDL_FRect soundTimerValue;
 }timerStruct;
 
+typedef struct{
+    SDL_Texture *indexTitle;
+    SDL_FRect indexRect;
+
+    SDL_Texture *labelTexture;
+    SDL_FRect labelRect;
+
+    SDL_Texture *valueTexture;
+    SDL_FRect valueRect;
+
+    uint16_t previousValue;
+}indexStruct;
 SDL_Texture *hexCharTextures[256];
 
 int xIncrement;
@@ -55,10 +68,13 @@ registerTexture registerArray[16];
 
 timerStruct *timers;
 
+indexStruct *indexS;
+
 int initializeAllRendering(emulObjects *objects, Chip8 *chip){
     initControlPanel(objects, chip);
     initRegisterPanel(objects, chip);
     initTimerPanel(objects, chip);
+    initIndexPanel(objects, chip);
     preRenderInstructions(objects, chip);
     return 0;
 }
@@ -384,18 +400,20 @@ int renderInstructionPanel(const emulObjects *objects, const Chip8 *chip, int sc
 int initTimerPanel(emulObjects *objects, Chip8 *chip){
     timers = malloc(sizeof(timerStruct));
     //render the title of the panel
+    TTF_SetFontSize(objects->font, 40);
     char title[10] = "TIMERS";
     SDL_Surface *titleSurface = TTF_RenderText_Solid(objects->font, title, strlen(title), objects->color);
 
     objects->timersTitle = SDL_CreateTextureFromSurface(objects->renderer, titleSurface);
     objects->timersTitleRect.x = objects->internalTitleRect.x;
-    objects->timersTitleRect.y = (SCREEN_HEIGHT * 25) / 2.0;
+    objects->timersTitleRect.y = registerArray[15].indexRect.y + registerArray[15].indexRect.h + 20;
     objects->timersTitleRect.w = titleSurface->w;
     objects->timersTitleRect.h = titleSurface->h;
     
     SDL_DestroySurface(titleSurface);
 
     //render the sound timer title 
+    TTF_SetFontSize(objects->font, 25);
     char soundTimerStr[10] = "SOUND:";
     SDL_Surface *soundSurface = TTF_RenderText_Solid(objects->font, soundTimerStr, strlen(soundTimerStr), objects->color);
 
@@ -429,6 +447,65 @@ int initTimerPanel(emulObjects *objects, Chip8 *chip){
     timers->delayTimerValue.y = timers->delayTimerRect.y;
     timers->delayTimerValue.w = 30;
     timers->delayTimerValue.h = 30;
+
+    return 0;
+}
+
+int initIndexPanel(emulObjects *objects, Chip8 *chip){
+    indexS = malloc(sizeof(indexStruct));
+   
+    TTF_SetFontSize(objects->font, 40);
+    char indexTitle[15] = "INDEX";
+    //no pc, fuck it
+    //
+    SDL_Surface *indexSurface = TTF_RenderText_Solid(objects->font, indexTitle, strlen(indexTitle), objects->color);
+
+    indexS->indexTitle = SDL_CreateTextureFromSurface(objects->renderer, indexSurface);
+    indexS->indexRect.x = objects->timersTitleRect.x;
+    indexS->indexRect.y = timers->soundTimerRect.y + timers->soundTimerRect.h + 20;
+    indexS->indexRect.w = indexSurface->w;
+    indexS->indexRect.h = indexSurface->h;
+
+    SDL_DestroySurface(indexSurface);
+
+
+    TTF_SetFontSize(objects->font, 25);
+    char indexLabel[5] = "I:";
+    SDL_Surface *labelSurface = TTF_RenderText_Solid(objects->font, indexLabel, strlen(indexLabel), objects->color);
+
+    indexS->labelRect.x = indexS->indexRect.x;
+    indexS->labelRect.y = indexS->indexRect.y + indexS->indexRect.h;
+    indexS->labelRect.w = labelSurface->w;
+    indexS->labelRect.h = labelSurface->h;
+
+    indexS->labelTexture = SDL_CreateTextureFromSurface(objects->renderer, labelSurface);
+    SDL_DestroySurface(labelSurface);
+    return 0;
+}
+
+int renderIndexPanel(emulObjects *objects, Chip8 *chip){
+    SDL_RenderTexture(objects->renderer, indexS->indexTitle, NULL, &indexS->indexRect);
+    SDL_RenderTexture(objects->renderer, indexS->labelTexture, NULL, &indexS->labelRect);
+    
+    if(indexS->previousValue != chip->I){
+        SDL_DestroyTexture(indexS->valueTexture);
+
+        TTF_SetFontSize(objects->font, 25);
+
+        char value[10];
+        snprintf(value, sizeof(value), "0x%04X", chip->I);
+
+        SDL_Surface *valueSurface = TTF_RenderText_Solid(objects->font, value, strlen(value), objects->color);
+
+        indexS->valueRect.x = indexS->labelRect.x + indexS->labelRect.w;
+        indexS->valueRect.y = indexS->labelRect.y;
+        indexS->valueRect.w = valueSurface->w;
+        indexS->valueRect.h = valueSurface->h;
+
+        indexS->valueTexture = SDL_CreateTextureFromSurface(objects->renderer, valueSurface);
+        SDL_DestroySurface(valueSurface);
+    }
+    SDL_RenderTexture(objects->renderer, indexS->valueTexture, NULL, &indexS->valueRect);
 
     return 0;
 }

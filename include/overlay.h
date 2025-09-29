@@ -10,6 +10,7 @@ int preRenderInstructions(const emulObjects *objects, const Chip8 *chip);
 
 int renderInstructionPanel(const emulObjects *objects, const Chip8 *chip, const int scalingFactor);
 
+
 int renderControlPanel(const emulObjects *objects, const Chip8 *chip);
 
 int renderInternalPanel(const emulObjects *objects, const Chip8 *chip);
@@ -28,5 +29,8 @@ int initRegisterTextures(SDL_Renderer *renderer, TTF_Font *font, SDL_Color color
 
 int initTimerPanel(emulObjects *objects, Chip8 *chip);
 
+int initIndexPanel(emulObjects *objects, Chip8 *chip);
+
+int renderIndexPanel(emulObjects *objects, Chip8 *chip);
 char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc);
 #endif

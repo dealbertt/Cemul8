@@ -699,6 +699,8 @@ int renderFrame(){
     renderControlPanel(&objects, &chip);
 
     renderInternalPanel(&objects, &chip);
+
+    renderTimerPanel(&objects, &chip);
     //Border for the instruction Panel
     //Border for the chip8 screen
 

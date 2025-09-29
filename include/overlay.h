@@ -4,19 +4,29 @@
 #include "chip8.h"
 #include "config.h"
 
-int initializeAllRendering(emulObjects *objects, Chip8 *chip);
 int preRenderInstructions(const emulObjects *objects, const Chip8 *chip);
 
+//Rendering functions
+
 int renderInstructionPanel(const emulObjects *objects, const Chip8 *chip, const int scalingFactor);
+
 int renderControlPanel(const emulObjects *objects, const Chip8 *chip);
+
 int renderInternalPanel(const emulObjects *objects, const Chip8 *chip);
-char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc);
+
+int renderTimerPanel(const emulObjects *objects, const Chip8 *chip);
+
+//Initializing the different titles
+int initializeAllRendering(emulObjects *objects, Chip8 *chip);
 
 int initControlPanel(emulObjects *objects, Chip8 *chip);
+
 int initPanelTitles(emulObjects *objects, const int scalingFactor);
 
 int initRegisterPanel(const emulObjects *objects, const Chip8 *chip);
 int initRegisterTextures(SDL_Renderer *renderer, TTF_Font *font);
-int updateRegisterValue();
 
+int initTimerPanel(emulObjects *objects, Chip8 *chip);
+
+char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc);
 #endif

@@ -26,7 +26,7 @@ TODO:
  */
 Config *globalConfig = NULL;
 
-emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL,  .instructionPanelTitle = NULL, .controlsPanelTitle = NULL, .internalsTitlePanel = NULL};
+emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL,  .instructionPanelTitle = NULL, .controlsPanelTitle = NULL, .internalsTitlePanel = NULL, .color = {255, 255, 255, 255}};
 
 
 

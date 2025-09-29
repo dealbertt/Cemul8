@@ -32,6 +32,16 @@ typedef struct{
     uint8_t previousValue;
 }registerTexture;
 
+typedef struct{
+    SDL_Texture *soundTimerTexture;
+    SDL_FRect soundTimerRect;
+
+    SDL_Texture *delayTimerTexture;
+    SDL_FRect delayTimerRect;
+
+    SDL_FRect delayTimerValue;
+    SDL_FRect soundTimerValue;
+}timerStruct;
 
 SDL_Texture *hexCharTextures[256];
 
@@ -43,9 +53,12 @@ instructionTexture preRenderedInstructions[MEMORY - 0x200 + 1];
 
 registerTexture registerArray[16];
 
+timerStruct *timers;
+
 int initializeAllRendering(emulObjects *objects, Chip8 *chip){
     initControlPanel(objects, chip);
     initRegisterPanel(objects, chip);
+    initTimerPanel(objects, chip);
     preRenderInstructions(objects, chip);
     return 0;
 }
@@ -171,7 +184,7 @@ int initPanelTitles(emulObjects *objects, const int scalingFactor){
 int initControlPanel(emulObjects *objects, Chip8 *chip){
     //Render the instructions for the control panel
     SDL_Color color = {255, 255, 255, 255};
-    char instructions[150] = "F1: STOP/RESUME EXECUTION | F6: EXECUTE ONE INSTRUCTION";
+    char instructions[150] = "F1: STOP/RESUME EXECUTION | F6: STEP | ESC: EXIT";
     TTF_SetFontSize(objects->font, 25);
     SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects->font, instructions, strlen(instructions), color);
     if(instructionSurface == NULL){
@@ -367,9 +380,78 @@ int renderInstructionPanel(const emulObjects *objects, const Chip8 *chip, int sc
         SDL_RenderRect(objects->renderer, &preRenderedInstructions[(chip->pc - 0x200) / 2].instRect);
         y += 35;
     }
+
     return 0; 
 }
 
+int initTimerPanel(emulObjects *objects, Chip8 *chip){
+    timers = malloc(sizeof(timerStruct));
+    //render the title of the panel
+    char title[10] = "TIMERS";
+    SDL_Surface *titleSurface = TTF_RenderText_Solid(objects->font, title, strlen(title), objects->color);
+
+    objects->timersTitle = SDL_CreateTextureFromSurface(objects->renderer, titleSurface);
+    objects->timersTitleRect.x = objects->internalTitleRect.x;
+    objects->timersTitleRect.y = (SCREEN_HEIGHT * 25) / 2.0;
+    objects->timersTitleRect.w = titleSurface->w;
+    objects->timersTitleRect.h = titleSurface->h;
+    
+    SDL_DestroySurface(titleSurface);
+
+    //render the sound timer title 
+    char soundTimerStr[10] = "SOUND:";
+    SDL_Surface *soundSurface = TTF_RenderText_Solid(objects->font, soundTimerStr, strlen(soundTimerStr), objects->color);
+
+    timers->soundTimerRect.x = objects->timersTitleRect.x;
+    timers->soundTimerRect.y = objects->timersTitleRect.y + objects->timersTitleRect.h;
+    timers->soundTimerRect.w = soundSurface->w;
+    timers->soundTimerRect.h = soundSurface->h;
+
+
+    timers->soundTimerValue.x = timers->soundTimerRect.x + timers->soundTimerRect.w;
+    timers->soundTimerValue.y = timers->soundTimerRect.y;
+    timers->soundTimerValue.w = 30;
+    timers->soundTimerValue.h = 30;
+
+    timers->soundTimerTexture = SDL_CreateTextureFromSurface(objects->renderer, soundSurface);
+    SDL_DestroySurface(soundSurface);
+
+    //render the delay timer title 
+    char delayTimerStr[10] = "DELAY:";
+    SDL_Surface *delaySurface = TTF_RenderText_Solid(objects->font, delayTimerStr, strlen(delayTimerStr), objects->color);
+
+    timers->delayTimerRect.x = timers->soundTimerValue.x + timers->soundTimerValue.w + 100;
+    timers->delayTimerRect.y = timers->soundTimerRect.y;
+    timers->delayTimerRect.w = delaySurface->w;
+    timers->delayTimerRect.h = delaySurface->h;
+
+    timers->delayTimerTexture = SDL_CreateTextureFromSurface(objects->renderer, delaySurface);
+    SDL_DestroySurface(delaySurface);
+
+    timers->delayTimerValue.x = timers->delayTimerRect.x + timers->delayTimerRect.w;
+    timers->delayTimerValue.y = timers->delayTimerRect.y;
+    timers->delayTimerValue.w = 30;
+    timers->delayTimerValue.h = 30;
+
+    printf("X of delayTimerRect: %f\n", timers->delayTimerRect.x);
+    printf("Y of delayTimerRect: %f\n", timers->delayTimerRect.y);
+    return 0;
+}
+
+int renderTimerPanel(const emulObjects *objects, const Chip8 *chip){
+    //render the title of the entire panel
+    SDL_RenderTexture(objects->renderer, objects->timersTitle, NULL, &objects->timersTitleRect);
+
+    //Render the title of each timer: sound and delay
+    SDL_RenderTexture(objects->renderer, timers->soundTimerTexture, NULL , &timers->soundTimerRect);
+    SDL_RenderTexture(objects->renderer, timers->delayTimerTexture, NULL , &timers->delayTimerRect);
+    
+    //render the value of each timer
+    SDL_RenderTexture(objects->renderer, hexCharTextures[chip->sound_timer], NULL , &timers->soundTimerValue);
+    SDL_RenderTexture(objects->renderer, hexCharTextures[chip->delay_timer], NULL , &timers->delayTimerValue);
+
+    return 0;
+}
 int preRenderInstructions(const emulObjects *objects, const Chip8 *chip){
     SDL_Color color = {255, 255, 255, 255};
     TTF_SetFontSize(objects->font, 25.0);

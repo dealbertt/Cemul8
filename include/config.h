@@ -10,24 +10,40 @@ typedef struct{
 }Config;
 
 typedef struct{
+    TTF_Font *font;
+    char filename[150];
+    SDL_Color color;
+
+    //Booleans for debugging
     bool start;
     bool keepGoing;
     bool executeOnce;
+
+    //The sdl_window and renderer for the app
     SDL_Window *window;
     SDL_Renderer *renderer;
+
+    //The texture for the chip-8 screen
     SDL_Texture *mainScreenTexture;
+
+    //Texture and rect for the instruction panel title (20 instruction from the pc)
     SDL_Texture *instructionPanelTitle;
     SDL_FRect instructiontitleRect;
+
+    //Texture and rect for the control panel title
     SDL_Texture *controlsPanelTitle;
     SDL_FRect controlTitleRect;
+
+    //Texture and rect for the internal panel title
     SDL_Texture *internalsTitlePanel;
     SDL_FRect internalTitleRect;
 
+    //Texture and rect for the control instructions (all text) 
     SDL_Texture *controlInstructions;
     SDL_FRect controlInstructionsRect;
 
-    TTF_Font *font;
-    char filename[150];
+    SDL_Texture *timersTitle;
+    SDL_FRect timersTitleRect;
 }emulObjects;
 
 Config *readConfiguration(const char *path);

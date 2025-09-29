@@ -16,7 +16,6 @@
 #include "../include/functions.h"
 #include "../include/overlay.h"
 
-
 /*
 TODO:
 - Reset button

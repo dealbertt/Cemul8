@@ -452,6 +452,7 @@ int preRenderInstructions(const emulObjects *objects, const Chip8 *chip){
     SDL_Color color = {255, 255, 255, 255};
     TTF_SetFontSize(objects->font, 25.0);
     //chip->pc = 0x200
+    
     for(uint16_t pc = 0x200; pc < MEMORY - 1; pc += 2){
         const uint16_t opcode = (chip->memory[pc] << 8) | (chip->memory[pc + 1]);
         char *instruction = getLongerInstruction(opcode, pc); 
@@ -466,6 +467,7 @@ int preRenderInstructions(const emulObjects *objects, const Chip8 *chip){
     }
     return 0;
 }
+
 char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc){
     char *message = malloc(60); // enough space for PC + description
 

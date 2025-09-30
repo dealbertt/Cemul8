@@ -16,7 +16,6 @@
 #include "../include/config.h"
 #include "../include/functions.h"
 #include "../include/overlay.h"
-#include "../include/audio.h"
 
 /*
 TODO:
@@ -31,7 +30,6 @@ Config *globalConfig = NULL;
 emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL,  .instructionPanelTitle = NULL, .controlsPanelTitle = NULL, .internalsTitlePanel = NULL, .color = {255, 255, 255, 255}};
 
 SDL_AudioStream *stream = NULL;
-
 
 void quit(int signum);
 int setFileName(const char *argName);
@@ -81,39 +79,6 @@ int main(int argc, char **argv){
         cleanup();
     }
     
-    SDL_AudioSpec spec;
-    spec.freq = 44100;
-    spec.format = SDL_AUDIO_S16;
-    spec.channels = 1;
-    
-    uint8_t *wavBuffer;
-    uint32_t wavLength;
-
-    if(!SDL_LoadWAV("beep.wav", &spec, &wavBuffer, &wavLength)){
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to open wav file: %s\n", SDL_GetError());
-        return -1;
-    }
-
-    SDL_AudioDeviceID device = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec);
-    if(!device){
-        printf("error\n");
-        return 0;
-    }
-    SDL_AudioStream *stream = SDL_CreateAudioStream(&spec, &spec);
-    if(stream == NULL){
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error opening audio device stream: %s\n", SDL_GetError());
-        return -1;
-    }
-
-    SDL_BindAudioStream(device, stream);
-    SDL_PutAudioStreamData(stream, wavBuffer, wavLength);
-
-    SDL_ResumeAudioDevice(device);
-
-    // Wait until the sound has finished playing
-    while (SDL_GetAudioStreamQueued(stream) > 0) {
-        SDL_Delay(100);
-    }
     SDL_Delay(1000);
     simulateCpu();
 

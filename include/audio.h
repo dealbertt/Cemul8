@@ -1,10 +1,20 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
+#include "chip8.h"
 #include <SDL3/SDL_audio.h>
 
-void SDLCALL audioCallBack(void *userData, SDL_AudioStream *stream, int additionalAmount, int totalAmount);
+typedef struct{
+    SDL_AudioDeviceID device;
+    SDL_AudioStream *stream;
+    SDL_AudioSpec spec;
 
+    uint8_t *wavBuffer;
+    uint32_t wavLength;
+}audioStruct;
 
-int playAudio();
+int initializeAudio(Chip8 *chip);
+
+void SDLCALL audioCallBack(void *userdata, SDL_AudioStream *stream, int additonalAmount, int totalAmoun8);
+int playAudio(audioStruct *audio);
 #endif //AUDIO_H

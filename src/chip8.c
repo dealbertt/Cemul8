@@ -21,6 +21,7 @@
 #include "../include/chip8.h"
 #include "../include/overlay.h"
 #include "../include/functions.h"
+#include "../include/audio.h"
 
 
 Chip8 chip;
@@ -109,7 +110,8 @@ void initialize(){
     // Reset timers
     chip.delay_timer = 0;
     chip.sound_timer = 0;
-
+    
+    initializeAudio(&chip);
 }
 
 int loadProgram(const char *fileName){
@@ -179,10 +181,6 @@ void simulateCpu(){
             if (chip.delay_timer > 0) chip.delay_timer--;
             if (chip.sound_timer > 0) {
                 chip.sound_timer--;
-                if (chip.sound_timer > 0) {
-                    //audio function
-                    printf("Beep!\n");
-                }
             }
             lastTimerTick = now;
         }

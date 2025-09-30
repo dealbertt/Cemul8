@@ -179,7 +179,8 @@ void simulateCpu(){
             if (chip.delay_timer > 0) chip.delay_timer--;
             if (chip.sound_timer > 0) {
                 chip.sound_timer--;
-                if (chip.sound_timer == 0) {
+                if (chip.sound_timer > 0) {
+                    //audio function
                     printf("Beep!\n");
                 }
             }

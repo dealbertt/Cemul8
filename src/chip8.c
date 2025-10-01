@@ -3,20 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_timer.h>
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_init.h>
-#include <SDL3/SDL_render.h>
-#include <SDL3/SDL_rect.h>
-#include <SDL3/SDL_keyboard.h>
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_error.h>
-#include <SDL3/SDL_oldnames.h>
-#include <SDL3/SDL_pixels.h>
-#include <SDL3/SDL_scancode.h>
-#include <SDL3/SDL_surface.h>
-#include <SDL3_ttf/SDL_ttf.h>
 
 #include "../include/chip8.h"
 #include "../include/overlay.h"

@@ -2,14 +2,6 @@
 #include <string.h>
 #include <signal.h>
 
-#include <SDL3/SDL_init.h>
-#include <SDL3/SDL_audio.h>
-#include <SDL3/SDL_render.h>
-#include <SDL3/SDL_video.h>
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_pixels.h>
-#include <SDL3/SDL_error.h>
-#include <SDL3_ttf/SDL_ttf.h>
 
 
 #include "../include/chip8.h"

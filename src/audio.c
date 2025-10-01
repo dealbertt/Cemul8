@@ -1,8 +1,6 @@
-#include <SDL3/SDL_stdinc.h>
 #include <stdlib.h>
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_audio.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 

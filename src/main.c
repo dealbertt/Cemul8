@@ -12,10 +12,6 @@
 #include "../include/config.h"
 #include "../include/overlay.h"
 
-/*
-TODO:
-- cleanup and code improvements
- */
 
 const Config *globalConfig = NULL;
 
@@ -104,6 +100,7 @@ void cleanup(){
     SDL_DestroyWindow(objects.window);
     SDL_DestroyRenderer(objects.renderer);
 
+    free((void *)globalConfig);
     TTF_Quit();
     SDL_Quit();
     exit(1);

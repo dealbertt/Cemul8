@@ -33,4 +33,6 @@ int initIndexPanel(emulObjects *objects, Chip8 *chip);
 
 int renderIndexPanel(emulObjects *objects, Chip8 *chip);
 char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc);
+
+void freeOverlayStructs();
 #endif

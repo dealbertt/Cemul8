@@ -47,17 +47,12 @@ void decode();
 
 int loadProgram(const char *fileName);
 
-int drawSprite(unsigned char x, unsigned char y, unsigned char nBytes, SDL_Window *window, SDL_Renderer *renderer);
-
-int updateScreen();
-
-int clearScreen();
+unsigned char generateRandomNN(int mask);
 
 int handleRealKeyboard();
-unsigned char handleKeyPad();
-
 
 int renderFrame();
 
+int updateChipScreen();
 
 #endif

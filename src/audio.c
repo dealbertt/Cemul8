@@ -46,7 +46,7 @@ void SDLCALL audioCallBack(void *userdata, SDL_AudioStream *stream, int additona
          for (int i = 0; i < samples; i++) {
             audio->phase++;
             int period = 44100 / 440; 
-            buffer[i] = (audio->phase % period) < (period / 2) ? 0xFF : 0x00;
+            buffer[i] = (audio->phase % period) < (period / 2) ? 0x55: 0x00;
         }
     }else{
         SDL_memset(buffer, 0, samples);

@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #include "../include/chip8.h"
 #include "../include/overlay.h"
-#include "../include/functions.h"
 #include "../include/audio.h"
 
+#include <SDL3/SDL_render.h>
+#include <SDL3/SDL_log.h>
 
 Chip8 chip;
 //CHIP-8 specifications
@@ -62,7 +62,7 @@ SDL_Scancode keyMap[16] = {
 
 
 extern emulObjects objects;
-extern Config *globalConfig;
+extern const Config *globalConfig;
 
 void initialize(){
 
@@ -173,9 +173,10 @@ void simulateCpu(){
         }
         // Handle input every loop iteration
         handleRealKeyboard();
-
-       renderFrame();
+        renderFrame();
     }
+
+    freeOverlayStructs();
 }
 
 
@@ -587,6 +588,11 @@ void emulateCycle(){
 
 }
 
+unsigned char generateRandomNN(int mask){
+    int randomNumber = rand() % (255 + 1 - 0) + 0;
+    return randomNumber & mask;
+}
+
 // CHIP-8 Keypad to Keyboard Mapping:
 // CHIP-8: 1 2 3 C   -> Keyboard: 1 2 3 4
 // CHIP-8: 4 5 6 D   -> Keyboard: Q W E R
@@ -623,6 +629,11 @@ int handleRealKeyboard(){
             }
 
             if(event.key.scancode == SDL_SCANCODE_F4){
+                initialize();
+                loadProgram(objects.filename);
+                drawFlag = true;
+                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "Resetting emulator...\n");
+                SDL_Delay(1000);
             }
 
             if(event.key.scancode == SDL_SCANCODE_F5){
@@ -653,31 +664,11 @@ int renderFrame(){
     //Clear the screen
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
     SDL_RenderClear(objects.renderer);
-    SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
+    SDL_SetRenderDrawColor(objects.renderer, objects.color.r, objects.color.g, objects.color.b, objects.color.a); // white border
 
-    //Rendering the chip-8 screen
-    //update the CHIP-8 screen if needed
-    if (drawFlag) {
-        uint32_t pixels[2048];
-        for (int i = 0; i < 2048; i++) {
-            pixels[i] = chip.gpx[i] ? 0xFFFFFFFF : 0xFF000000;
-        }
-
-        SDL_UpdateTexture(objects.mainScreenTexture, NULL, pixels, 64 * sizeof(Uint32));
-        drawFlag = false;
-    }
-
-    SDL_FRect mainWindowRect = {
-             (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
-            , 0
-            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
-            , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0};
-
-    SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
-    SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
-    SDL_RenderRect(objects.renderer, &mainWindowRect);
-
+    updateChipScreen();
     //The entire instruction panel
+
     renderInstructionPanel(&objects, &chip, globalConfig->scalingFactor);
 
     //The keypad Control panel
@@ -701,6 +692,36 @@ int renderFrame(){
     return 0;
 }
 
+int updateChipScreen(){
+    //Rendering the chip-8 screen
+    //update the CHIP-8 screen if needed
+    uint64_t fg = ((uint32_t)objects.color.a << 24) |
+              ((uint32_t)objects.color.r << 16) |
+              ((uint32_t)objects.color.g << 8)  |
+              ((uint32_t)objects.color.b);
+
+    if (drawFlag) {
+        uint32_t pixels[2048];
+        for (int i = 0; i < 2048; i++) {
+            pixels[i] = chip.gpx[i] ? fg : 0xFF000000;
+        }
+
+        SDL_UpdateTexture(objects.mainScreenTexture, NULL, pixels, 64 * sizeof(Uint32));
+        drawFlag = false;
+    }
+
+    SDL_FRect mainWindowRect = {
+             (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0
+            , 0
+            , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
+            , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0};
+
+    SDL_SetRenderDrawColor(objects.renderer, objects.color.r, objects.color.g, objects.color.b, objects.color.a); // white border
+    SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
+    SDL_RenderRect(objects.renderer, &mainWindowRect);
+
+    return 0;
+}
 
 
 

@@ -8,6 +8,7 @@
 #include <string.h>
 #include "../include/overlay.h"
 #include "../include/config.h"
+
 typedef struct{
     SDL_Texture *keyTexture;
     SDL_Color color;
@@ -69,6 +70,8 @@ registerTexture registerArray[16];
 timerStruct *timers;
 
 indexStruct *indexS;
+
+extern Config *globalConfig;
 
 int initializeAllRendering(emulObjects *objects, Chip8 *chip){
     initControlPanel(objects, chip);
@@ -198,25 +201,28 @@ int initPanelTitles(emulObjects *objects, const int scalingFactor){
 
 int initControlPanel(emulObjects *objects, Chip8 *chip){
     //Render the instructions for the control panel
-    SDL_Color color = {255, 255, 255, 255};
-    char instructions[150] = "F1: STOP/RESUME EXECUTION | F6: STEP | ESC: EXIT";
-    TTF_SetFontSize(objects->font, 25);
-    SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects->font, instructions, strlen(instructions), color);
+    char instructions[150] = "F1: STOP/RESUME EXECUTION | F6: STEP | ESC: EXIT | F4: RESET";
+    TTF_SetFontSize(objects->font, 20);
+    SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects->font, instructions, strlen(instructions), objects->color);
     if(instructionSurface == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create internalsTitlePanel: %s\n", SDL_GetError());
         return -1;
     }
 
     objects->controlInstructions = SDL_CreateTextureFromSurface(objects->renderer, instructionSurface);
+    if(objects->controlInstructions == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create controlInstructions: %s\n", SDL_GetError());
+        return -1;
+    }
 
-    objects->controlInstructionsRect.x = (SCREEN_WIDTH * 25) / 4.0;
+    objects->controlInstructionsRect.x = (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0;
+
     objects->controlInstructionsRect.y = objects->controlTitleRect.y + 50;
     objects->controlInstructionsRect.w = instructionSurface->w;
     objects->controlInstructionsRect.h = instructionSurface->h;
     SDL_RenderTexture(objects->renderer, objects->controlInstructions, NULL, &objects->controlInstructionsRect);
     SDL_DestroySurface(instructionSurface);
     //---------------------------
-    //
     //Render the keypad for the first time 
     
     TTF_SetFontSize(objects->font, 40);
@@ -228,24 +234,24 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
             int keyIndex = row * 4 + col;
             char keyPadCode[5];
 
-            if(chip->keyPad[keyIndex] != 0){
-                color.b = 0;
-                color.g = 0;
-            }
             snprintf(keyPadCode, sizeof(keyPadCode), "%01X", keyIndex);
 
-            SDL_Surface *keySurface = TTF_RenderText_Solid(objects->font, keyPadCode, strlen(keyPadCode), color); 
+            SDL_Surface *keySurface = TTF_RenderText_Solid(objects->font, keyPadCode, strlen(keyPadCode), objects->color); 
             if(keySurface == NULL){
                 SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error creating keySurface: %s\n", SDL_GetError());
                 return -1;
             }
 
             keyTextures[keyIndex].keyTexture = SDL_CreateTextureFromSurface(objects->renderer, keySurface);
+            if(keyTextures[keyIndex].keyTexture == NULL){
+                SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create keyTextures[%d].KeyTexture: %s\n", keyIndex, SDL_GetError());
+                return -1;
+            }
 
-             keyTextures[keyIndex].keyRect.x = x; 
-             keyTextures[keyIndex].keyRect.y = y;
-             keyTextures[keyIndex].keyRect.w = keySurface->w; 
-             keyTextures[keyIndex].keyRect.h = keySurface->h; 
+            keyTextures[keyIndex].keyRect.x = x; 
+            keyTextures[keyIndex].keyRect.y = y;
+            keyTextures[keyIndex].keyRect.w = keySurface->w; 
+            keyTextures[keyIndex].keyRect.h = keySurface->h; 
 
             SDL_RenderTexture(objects->renderer, keyTextures[keyIndex].keyTexture, NULL, &keyTextures[keyIndex].keyRect);
 
@@ -273,9 +279,6 @@ int renderControlPanel(const emulObjects *objects, const Chip8 *chip){
 
         for(int col = 0; col < 4; col++){
             int keyIndex = row * 4 + col;
-            //char keyPadCode[5];
-            SDL_Color color = {128, 128, 128, 255}; //white
-            keyTextures[keyIndex].color = color;
 
             if(chip->keyPad[keyIndex] != 0){
                 SDL_SetRenderDrawColor(objects->renderer, 255, 0, 0, 255);
@@ -298,6 +301,7 @@ int initRegisterPanel(const emulObjects *objects, const Chip8 *chip){
     int y = objects->internalTitleRect.h + 20;
 
     initRegisterTextures(objects->renderer, objects->font, objects->color);
+
     for(int row = 0; row < 4; row++){
         int x = objects->internalTitleRect.x;
         for(int col = 0; col < 4; col++){
@@ -306,8 +310,16 @@ int initRegisterPanel(const emulObjects *objects, const Chip8 *chip){
             char indexStr[10];
             snprintf(indexStr, sizeof(indexStr), "V%01X: ", regIndex);
             SDL_Surface *indexSurface = TTF_RenderText_Solid(objects->font, indexStr, strlen(indexStr), objects->color);
+            if(indexSurface == NULL){
+                SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create indexSurface: %s\n", SDL_GetError());
+                return -1;
+            }
 
             registerArray[regIndex].indexTexture = SDL_CreateTextureFromSurface(objects->renderer, indexSurface);
+            if(registerArray[regIndex].indexTexture == NULL){
+                SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create registerArray[%d].indexTexture: %s\n", regIndex, SDL_GetError());
+                return -1;
+            }
             registerArray[regIndex].indexRect.x = x; 
             registerArray[regIndex].indexRect.y = y; 
             registerArray[regIndex].indexRect.w = indexSurface->w; 
@@ -379,8 +391,11 @@ int renderInternalPanel(const emulObjects *objects, const Chip8 *chip){
 
 int renderInstructionPanel(const emulObjects *objects, const Chip8 *chip, int scalingFactor){
     SDL_RenderTexture(objects->renderer, objects->instructionPanelTitle, NULL, &objects->instructiontitleRect);
+
     int y = objects->instructiontitleRect.h;
+
     int baseIndex = ((chip->pc - 0x200) / 2) - 1; 
+
     for(int i = 0; i < 20; i++){
         if(baseIndex < 0)
             baseIndex = 0;
@@ -399,12 +414,26 @@ int renderInstructionPanel(const emulObjects *objects, const Chip8 *chip, int sc
 
 int initTimerPanel(emulObjects *objects, Chip8 *chip){
     timers = malloc(sizeof(timerStruct));
+    if(timers == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error allocating memory for timerStruct\n");
+        return -1;
+    }
+
     //render the title of the panel
     TTF_SetFontSize(objects->font, 40);
     char title[10] = "TIMERS";
     SDL_Surface *titleSurface = TTF_RenderText_Solid(objects->font, title, strlen(title), objects->color);
+    if(titleSurface == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create titleSurface: %s\n", SDL_GetError());
+        return -1;
+    }
 
     objects->timersTitle = SDL_CreateTextureFromSurface(objects->renderer, titleSurface);
+    if(objects->timersTitle == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create timersTitle: %s\n", SDL_GetError());
+        SDL_DestroySurface(titleSurface);
+        return -1;
+    }
     objects->timersTitleRect.x = objects->internalTitleRect.x;
     objects->timersTitleRect.y = registerArray[15].indexRect.y + registerArray[15].indexRect.h + 20;
     objects->timersTitleRect.w = titleSurface->w;
@@ -416,6 +445,10 @@ int initTimerPanel(emulObjects *objects, Chip8 *chip){
     TTF_SetFontSize(objects->font, 25);
     char soundTimerStr[10] = "SOUND:";
     SDL_Surface *soundSurface = TTF_RenderText_Solid(objects->font, soundTimerStr, strlen(soundTimerStr), objects->color);
+    if(soundSurface == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create soundSurface: %s\n", SDL_GetError());
+        return -1;
+    }
 
     timers->soundTimerRect.x = objects->timersTitleRect.x;
     timers->soundTimerRect.y = objects->timersTitleRect.y + objects->timersTitleRect.h;
@@ -429,11 +462,20 @@ int initTimerPanel(emulObjects *objects, Chip8 *chip){
     timers->soundTimerValue.h = 30;
 
     timers->soundTimerTexture = SDL_CreateTextureFromSurface(objects->renderer, soundSurface);
+    if(timers->soundTimerTexture == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create soundTimerTexture: %s\n", SDL_GetError());
+        SDL_DestroySurface(soundSurface);
+        return -1;
+    }
     SDL_DestroySurface(soundSurface);
 
     //render the delay timer title 
     char delayTimerStr[10] = "DELAY:";
     SDL_Surface *delaySurface = TTF_RenderText_Solid(objects->font, delayTimerStr, strlen(delayTimerStr), objects->color);
+    if(delaySurface == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create delaySurface: %s\n", SDL_GetError());
+        return -1;
+    }
 
     timers->delayTimerRect.x = timers->soundTimerValue.x + timers->soundTimerValue.w + 100;
     timers->delayTimerRect.y = timers->soundTimerRect.y;
@@ -441,6 +483,11 @@ int initTimerPanel(emulObjects *objects, Chip8 *chip){
     timers->delayTimerRect.h = delaySurface->h;
 
     timers->delayTimerTexture = SDL_CreateTextureFromSurface(objects->renderer, delaySurface);
+    if(timers->delayTimerTexture == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create delayTimerTexture: %s\n", SDL_GetError());
+        SDL_DestroySurface(delaySurface);
+        return -1;
+    }
     SDL_DestroySurface(delaySurface);
 
     timers->delayTimerValue.x = timers->delayTimerRect.x + timers->delayTimerRect.w;
@@ -453,14 +500,28 @@ int initTimerPanel(emulObjects *objects, Chip8 *chip){
 
 int initIndexPanel(emulObjects *objects, Chip8 *chip){
     indexS = malloc(sizeof(indexStruct));
+    if(indexS == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error allocating memory for indexS\n");
+        return -1;
+    }
    
     TTF_SetFontSize(objects->font, 40);
     char indexTitle[15] = "INDEX";
     //no pc, fuck it
     //
     SDL_Surface *indexSurface = TTF_RenderText_Solid(objects->font, indexTitle, strlen(indexTitle), objects->color);
+    if(indexSurface == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create indexSurface: %s\n", SDL_GetError());
+        return -1;
+    }
 
     indexS->indexTitle = SDL_CreateTextureFromSurface(objects->renderer, indexSurface);
+    if(indexS->indexTitle == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create indexTitle: %s\n", SDL_GetError());
+        SDL_DestroySurface(indexSurface);
+        return -1;
+    }
+
     indexS->indexRect.x = objects->timersTitleRect.x;
     indexS->indexRect.y = timers->soundTimerRect.y + timers->soundTimerRect.h + 20;
     indexS->indexRect.w = indexSurface->w;
@@ -472,6 +533,10 @@ int initIndexPanel(emulObjects *objects, Chip8 *chip){
     TTF_SetFontSize(objects->font, 25);
     char indexLabel[5] = "I:";
     SDL_Surface *labelSurface = TTF_RenderText_Solid(objects->font, indexLabel, strlen(indexLabel), objects->color);
+    if(labelSurface == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create labelSurface: %s\n", SDL_GetError());
+        return -1;
+    }
 
     indexS->labelRect.x = indexS->indexRect.x;
     indexS->labelRect.y = indexS->indexRect.y + indexS->indexRect.h;
@@ -479,6 +544,12 @@ int initIndexPanel(emulObjects *objects, Chip8 *chip){
     indexS->labelRect.h = labelSurface->h;
 
     indexS->labelTexture = SDL_CreateTextureFromSurface(objects->renderer, labelSurface);
+    if(indexS->labelTexture == NULL){
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create labelTexture: %s\n", SDL_GetError());
+        SDL_DestroySurface(labelSurface);
+        return -1;
+    }
+
     SDL_DestroySurface(labelSurface);
     return 0;
 }
@@ -496,6 +567,10 @@ int renderIndexPanel(emulObjects *objects, Chip8 *chip){
         snprintf(value, sizeof(value), "0x%04X", chip->I);
 
         SDL_Surface *valueSurface = TTF_RenderText_Solid(objects->font, value, strlen(value), objects->color);
+        if(valueSurface == NULL){
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create valueSurface: %s\n", SDL_GetError());
+            return -1;
+        }
 
         indexS->valueRect.x = indexS->labelRect.x + indexS->labelRect.w;
         indexS->valueRect.y = indexS->labelRect.y;
@@ -503,9 +578,15 @@ int renderIndexPanel(emulObjects *objects, Chip8 *chip){
         indexS->valueRect.h = valueSurface->h;
 
         indexS->valueTexture = SDL_CreateTextureFromSurface(objects->renderer, valueSurface);
+        if(indexS->valueTexture == NULL){
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create valueTexture: %s\n", SDL_GetError());
+            SDL_DestroySurface(valueSurface);
+            return -1;
+        }
         SDL_DestroySurface(valueSurface);
     }
     SDL_RenderTexture(objects->renderer, indexS->valueTexture, NULL, &indexS->valueRect);
+    SDL_SetRenderDrawColor(objects->renderer, objects->color.r, objects->color.g, objects->color.b, objects->color.a);
 
     return 0;
 }
@@ -526,16 +607,24 @@ int renderTimerPanel(const emulObjects *objects, const Chip8 *chip){
 }
 
 int preRenderInstructions(const emulObjects *objects, const Chip8 *chip){
-    SDL_Color color = {255, 255, 255, 255};
     TTF_SetFontSize(objects->font, 25.0);
-    //chip->pc = 0x200
     
+    //chip->pc = 0x200
     for(uint16_t pc = 0x200; pc < MEMORY - 1; pc += 2){
         const uint16_t opcode = (chip->memory[pc] << 8) | (chip->memory[pc + 1]);
         char *instruction = getLongerInstruction(opcode, pc); 
 
-        SDL_Surface *surface = TTF_RenderText_Solid(objects->font, instruction, strlen(instruction), color);
+        SDL_Surface *surface = TTF_RenderText_Solid(objects->font, instruction, strlen(instruction), objects->color);
+        if(surface == NULL){
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create preRender Surface: %s\n", SDL_GetError());
+            return -1;
+        }
         preRenderedInstructions[(pc - 0x200) / 2].instTexture = SDL_CreateTextureFromSurface(objects->renderer, surface);      
+        if(preRenderedInstructions[(pc - 0x200) / 2].instTexture == NULL){
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying to create preRenderTexture[%d]: %s\n",(pc - 0x200) / 2, SDL_GetError());
+            return -1;
+        }
+
         preRenderedInstructions[(pc - 0x200) / 2].instRect.w = surface->w;
         preRenderedInstructions[(pc - 0x200) / 2].instRect.h = surface->h;
         
@@ -667,4 +756,9 @@ char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc
     }
 
     return message;
+}
+
+void freeOverlayStructs(){
+    free(indexS);
+    free(timers);
 }

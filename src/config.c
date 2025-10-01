@@ -11,7 +11,7 @@ Config *readConfiguration(const char *path, emulObjects *objects){
         perror("Error while trying to open the config file");
         return NULL;
     }
-    Config *config = (Config *)malloc(sizeof(Config));
+    Config *config = malloc(sizeof(Config));
     char line[100];
     while(fgets(line, sizeof(line), ptr)){
         if(line[0] == '#' || strlen(line) < 3) continue; 

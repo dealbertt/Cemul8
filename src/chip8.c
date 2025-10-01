@@ -6,7 +6,6 @@
 
 #include "../include/chip8.h"
 #include "../include/overlay.h"
-#include "../include/functions.h"
 #include "../include/audio.h"
 
 
@@ -585,6 +584,11 @@ void emulateCycle(){
             break;
     } 
 
+}
+
+unsigned char generateRandomNN(int mask){
+    int randomNumber = rand() % (255 + 1 - 0) + 0;
+    return randomNumber & mask;
 }
 
 // CHIP-8 Keypad to Keyboard Mapping:

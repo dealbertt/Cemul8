@@ -1,24 +1,29 @@
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_render.h>
+#include <SDL3/SDL_video.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 
 
-
 #include "../include/chip8.h"
 #include "../include/config.h"
-#include "../include/functions.h"
 #include "../include/overlay.h"
 
 /*
 TODO:
 - cleanup and code improvements
  */
+
 const Config *globalConfig = NULL;
 
 emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL,  .instructionPanelTitle = NULL, .controlsPanelTitle = NULL, .internalsTitlePanel = NULL};
 
 void quit(int signum);
 int setFileName(const char *argName);
+void cleanup();
 
 int main(int argc, char **argv){
     signal(SIGTERM, quit);
@@ -87,4 +92,19 @@ int setFileName(const char *argName){
     strcpy(objects.filename, argName);
     printf("FileName: %s\n", objects.filename);
     return 0;
+}
+
+void cleanup(){
+    SDL_DestroyTexture(objects.mainScreenTexture);
+    SDL_DestroyTexture(objects.controlsPanelTitle);
+    SDL_DestroyTexture(objects.instructionPanelTitle);
+    SDL_DestroyTexture(objects.internalsTitlePanel);
+    SDL_DestroyTexture(objects.timersTitle);
+
+    SDL_DestroyWindow(objects.window);
+    SDL_DestroyRenderer(objects.renderer);
+
+    TTF_Quit();
+    SDL_Quit();
+    exit(1);
 }

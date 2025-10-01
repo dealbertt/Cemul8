@@ -71,6 +71,8 @@ timerStruct *timers;
 
 indexStruct *indexS;
 
+extern Config *globalConfig;
+
 int initializeAllRendering(emulObjects *objects, Chip8 *chip){
     initControlPanel(objects, chip);
     initRegisterPanel(objects, chip);
@@ -209,7 +211,8 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
 
     objects->controlInstructions = SDL_CreateTextureFromSurface(objects->renderer, instructionSurface);
 
-    objects->controlInstructionsRect.x = (SCREEN_WIDTH * 25) / 4.0;
+    objects->controlInstructionsRect.x = (SCREEN_WIDTH * globalConfig->scalingFactor) / 4.0;
+
     objects->controlInstructionsRect.y = objects->controlTitleRect.y + 50;
     objects->controlInstructionsRect.w = instructionSurface->w;
     objects->controlInstructionsRect.h = instructionSurface->h;

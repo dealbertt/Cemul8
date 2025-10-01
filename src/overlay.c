@@ -8,6 +8,7 @@
 #include <string.h>
 #include "../include/overlay.h"
 #include "../include/config.h"
+
 typedef struct{
     SDL_Texture *keyTexture;
     SDL_Color color;
@@ -199,8 +200,8 @@ int initPanelTitles(emulObjects *objects, const int scalingFactor){
 int initControlPanel(emulObjects *objects, Chip8 *chip){
     //Render the instructions for the control panel
     SDL_Color color = {255, 255, 255, 255};
-    char instructions[150] = "F1: STOP/RESUME EXECUTION | F6: STEP | ESC: EXIT";
-    TTF_SetFontSize(objects->font, 25);
+    char instructions[150] = "F1: STOP/RESUME EXECUTION | F6: STEP | ESC: EXIT | F4: RESET";
+    TTF_SetFontSize(objects->font, 20);
     SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects->font, instructions, strlen(instructions), color);
     if(instructionSurface == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create internalsTitlePanel: %s\n", SDL_GetError());

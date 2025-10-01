@@ -182,6 +182,7 @@ void simulateCpu(){
             if (chip.sound_timer > 0) {
                 chip.sound_timer--;
             }
+
             lastTimerTick = now;
         }
         // Handle input every loop iteration
@@ -267,6 +268,7 @@ void emulateCycle(){
         case 0x4000: //Skip the following instruction if the value of register VX is not equal to NN
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of V[%d]: %04X\n", xRegIndex, chip.V[xRegIndex]);
             SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG]: Value of NN: %04X\n", nn);
+
             if(chip.V[xRegIndex] != nn){
                 chip.pc += 2;
             }

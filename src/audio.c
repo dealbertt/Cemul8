@@ -41,7 +41,7 @@ void SDLCALL audioCallBack(void *userdata, SDL_AudioStream *stream, int additona
     int samples = additonalAmount;
     if(samples == 0) return;
 
-    Uint8 *buffer = SDL_malloc(samples);
+    uint8_t *buffer = SDL_malloc(samples);
     if(!buffer) return;
 
     if(audio->chip->sound_timer > 0){

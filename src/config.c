@@ -39,8 +39,27 @@ Config *readConfiguration(const char *path, emulObjects *objects){
             objects->color.a = 255;
             break;
         case 2:
-            objects->color.r = 0;
-            objects->color.b = 0;
+            objects->color.r = 50;
+            objects->color.b = 50;
+            objects->color.g = 255;
+            objects->color.a = 255;
+            break;
+        case 3:
+            objects->color.r = 50;
+            objects->color.b = 255;
+            objects->color.g = 50;
+            objects->color.a = 255;
+            break;
+        case 4:
+            objects->color.r = 255;
+            objects->color.b = 50;
+            objects->color.g = 50;
+            objects->color.a = 255;
+            break;
+
+        default:
+            objects->color.r = 255;
+            objects->color.b = 255;
             objects->color.g = 255;
             objects->color.a = 255;
             break;

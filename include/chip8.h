@@ -53,5 +53,6 @@ int handleRealKeyboard();
 
 int renderFrame();
 
+int updateChipScreen();
 
 #endif

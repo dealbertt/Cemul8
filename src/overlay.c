@@ -219,7 +219,6 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
     SDL_RenderTexture(objects->renderer, objects->controlInstructions, NULL, &objects->controlInstructionsRect);
     SDL_DestroySurface(instructionSurface);
     //---------------------------
-    //
     //Render the keypad for the first time 
     
     TTF_SetFontSize(objects->font, 40);
@@ -241,10 +240,10 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
 
             keyTextures[keyIndex].keyTexture = SDL_CreateTextureFromSurface(objects->renderer, keySurface);
 
-             keyTextures[keyIndex].keyRect.x = x; 
-             keyTextures[keyIndex].keyRect.y = y;
-             keyTextures[keyIndex].keyRect.w = keySurface->w; 
-             keyTextures[keyIndex].keyRect.h = keySurface->h; 
+            keyTextures[keyIndex].keyRect.x = x; 
+            keyTextures[keyIndex].keyRect.y = y;
+            keyTextures[keyIndex].keyRect.w = keySurface->w; 
+            keyTextures[keyIndex].keyRect.h = keySurface->h; 
 
             SDL_RenderTexture(objects->renderer, keyTextures[keyIndex].keyTexture, NULL, &keyTextures[keyIndex].keyRect);
 
@@ -272,9 +271,6 @@ int renderControlPanel(const emulObjects *objects, const Chip8 *chip){
 
         for(int col = 0; col < 4; col++){
             int keyIndex = row * 4 + col;
-            //char keyPadCode[5];
-            SDL_Color color = {128, 128, 128, 255}; //white
-            keyTextures[keyIndex].color = color;
 
             if(chip->keyPad[keyIndex] != 0){
                 SDL_SetRenderDrawColor(objects->renderer, 255, 0, 0, 255);
@@ -297,6 +293,7 @@ int initRegisterPanel(const emulObjects *objects, const Chip8 *chip){
     int y = objects->internalTitleRect.h + 20;
 
     initRegisterTextures(objects->renderer, objects->font, objects->color);
+
     for(int row = 0; row < 4; row++){
         int x = objects->internalTitleRect.x;
         for(int col = 0; col < 4; col++){
@@ -378,8 +375,11 @@ int renderInternalPanel(const emulObjects *objects, const Chip8 *chip){
 
 int renderInstructionPanel(const emulObjects *objects, const Chip8 *chip, int scalingFactor){
     SDL_RenderTexture(objects->renderer, objects->instructionPanelTitle, NULL, &objects->instructiontitleRect);
+
     int y = objects->instructiontitleRect.h;
+
     int baseIndex = ((chip->pc - 0x200) / 2) - 1; 
+
     for(int i = 0; i < 20; i++){
         if(baseIndex < 0)
             baseIndex = 0;
@@ -398,6 +398,7 @@ int renderInstructionPanel(const emulObjects *objects, const Chip8 *chip, int sc
 
 int initTimerPanel(emulObjects *objects, Chip8 *chip){
     timers = malloc(sizeof(timerStruct));
+
     //render the title of the panel
     TTF_SetFontSize(objects->font, 40);
     char title[10] = "TIMERS";
@@ -527,8 +528,8 @@ int renderTimerPanel(const emulObjects *objects, const Chip8 *chip){
 
 int preRenderInstructions(const emulObjects *objects, const Chip8 *chip){
     TTF_SetFontSize(objects->font, 25.0);
-    //chip->pc = 0x200
     
+    //chip->pc = 0x200
     for(uint16_t pc = 0x200; pc < MEMORY - 1; pc += 2){
         const uint16_t opcode = (chip->memory[pc] << 8) | (chip->memory[pc + 1]);
         char *instruction = getLongerInstruction(opcode, pc); 
@@ -666,4 +667,9 @@ char *getLongerInstruction(const uint16_t currentOpcode, const uint16_t secondPc
     }
 
     return message;
+}
+
+void freeOverlayStructs(){
+    free(indexS);
+    free(timers);
 }

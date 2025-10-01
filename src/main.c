@@ -11,15 +11,11 @@
 
 /*
 TODO:
-- Reset button
-
 - cleanup and code improvements
  */
-Config *globalConfig = NULL;
+const Config *globalConfig = NULL;
 
-emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL,  .instructionPanelTitle = NULL, .controlsPanelTitle = NULL, .internalsTitlePanel = NULL, .color = {255, 255, 255, 255}};
-
-SDL_AudioStream *stream = NULL;
+emulObjects objects = {.start= false, .keepGoing = false, .executeOnce = false, .window = NULL, .renderer = NULL, .mainScreenTexture= NULL,  .instructionPanelTitle = NULL, .controlsPanelTitle = NULL, .internalsTitlePanel = NULL};
 
 void quit(int signum);
 int setFileName(const char *argName);
@@ -29,7 +25,7 @@ int main(int argc, char **argv){
     signal(SIGQUIT, quit);
     signal(SIGINT, quit);
 
-    globalConfig = readConfiguration("config/config.txt");
+    globalConfig = readConfiguration("config/config.txt", &objects);
     if(globalConfig == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error while trying to load the config file\n");
         return -1;

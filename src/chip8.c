@@ -1,3 +1,4 @@
+#include <SDL3/SDL_render.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,7 +62,7 @@ SDL_Scancode keyMap[16] = {
 
 
 extern emulObjects objects;
-extern Config *globalConfig;
+extern const Config *globalConfig;
 
 void initialize(){
 
@@ -657,14 +658,19 @@ int renderFrame(){
     //Clear the screen
     SDL_SetRenderDrawColor(objects.renderer, 0, 0, 0, 255); 
     SDL_RenderClear(objects.renderer);
-    SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
+    SDL_SetRenderDrawColor(objects.renderer, objects.color.r, objects.color.g, objects.color.b, objects.color.a); // white border
 
     //Rendering the chip-8 screen
     //update the CHIP-8 screen if needed
+    uint64_t fg = ((uint32_t)objects.color.a << 24) |
+              ((uint32_t)objects.color.r << 16) |
+              ((uint32_t)objects.color.g << 8)  |
+              ((uint32_t)objects.color.b);
+
     if (drawFlag) {
         uint32_t pixels[2048];
         for (int i = 0; i < 2048; i++) {
-            pixels[i] = chip.gpx[i] ? 0xFFFFFFFF : 0xFF000000;
+            pixels[i] = chip.gpx[i] ? fg : 0xFF000000;
         }
 
         SDL_UpdateTexture(objects.mainScreenTexture, NULL, pixels, 64 * sizeof(Uint32));
@@ -677,8 +683,8 @@ int renderFrame(){
             , (SCREEN_WIDTH * globalConfig->scalingFactor) / 2.0
             , (SCREEN_HEIGHT * globalConfig->scalingFactor) / 2.0};
 
+    SDL_SetRenderDrawColor(objects.renderer, objects.color.r, objects.color.g, objects.color.b, objects.color.a); // white border
     SDL_RenderTexture(objects.renderer, objects.mainScreenTexture, NULL, &mainWindowRect);
-    SDL_SetRenderDrawColor(objects.renderer, 255, 255, 255, 255); // white border
     SDL_RenderRect(objects.renderer, &mainWindowRect);
 
     //The entire instruction panel

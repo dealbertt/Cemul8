@@ -199,10 +199,9 @@ int initPanelTitles(emulObjects *objects, const int scalingFactor){
 
 int initControlPanel(emulObjects *objects, Chip8 *chip){
     //Render the instructions for the control panel
-    SDL_Color color = {255, 255, 255, 255};
     char instructions[150] = "F1: STOP/RESUME EXECUTION | F6: STEP | ESC: EXIT | F4: RESET";
     TTF_SetFontSize(objects->font, 20);
-    SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects->font, instructions, strlen(instructions), color);
+    SDL_Surface *instructionSurface = TTF_RenderText_Solid(objects->font, instructions, strlen(instructions), objects->color);
     if(instructionSurface == NULL){
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error trying create internalsTitlePanel: %s\n", SDL_GetError());
         return -1;
@@ -229,13 +228,9 @@ int initControlPanel(emulObjects *objects, Chip8 *chip){
             int keyIndex = row * 4 + col;
             char keyPadCode[5];
 
-            if(chip->keyPad[keyIndex] != 0){
-                color.b = 0;
-                color.g = 0;
-            }
             snprintf(keyPadCode, sizeof(keyPadCode), "%01X", keyIndex);
 
-            SDL_Surface *keySurface = TTF_RenderText_Solid(objects->font, keyPadCode, strlen(keyPadCode), color); 
+            SDL_Surface *keySurface = TTF_RenderText_Solid(objects->font, keyPadCode, strlen(keyPadCode), objects->color); 
             if(keySurface == NULL){
                 SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error creating keySurface: %s\n", SDL_GetError());
                 return -1;
@@ -507,6 +502,7 @@ int renderIndexPanel(emulObjects *objects, Chip8 *chip){
         SDL_DestroySurface(valueSurface);
     }
     SDL_RenderTexture(objects->renderer, indexS->valueTexture, NULL, &indexS->valueRect);
+    SDL_SetRenderDrawColor(objects->renderer, objects->color.r, objects->color.g, objects->color.b, objects->color.a);
 
     return 0;
 }
@@ -527,7 +523,6 @@ int renderTimerPanel(const emulObjects *objects, const Chip8 *chip){
 }
 
 int preRenderInstructions(const emulObjects *objects, const Chip8 *chip){
-    SDL_Color color = {255, 255, 255, 255};
     TTF_SetFontSize(objects->font, 25.0);
     //chip->pc = 0x200
     
@@ -535,7 +530,7 @@ int preRenderInstructions(const emulObjects *objects, const Chip8 *chip){
         const uint16_t opcode = (chip->memory[pc] << 8) | (chip->memory[pc + 1]);
         char *instruction = getLongerInstruction(opcode, pc); 
 
-        SDL_Surface *surface = TTF_RenderText_Solid(objects->font, instruction, strlen(instruction), color);
+        SDL_Surface *surface = TTF_RenderText_Solid(objects->font, instruction, strlen(instruction), objects->color);
         preRenderedInstructions[(pc - 0x200) / 2].instTexture = SDL_CreateTextureFromSurface(objects->renderer, surface);      
         preRenderedInstructions[(pc - 0x200) / 2].instRect.w = surface->w;
         preRenderedInstructions[(pc - 0x200) / 2].instRect.h = surface->h;

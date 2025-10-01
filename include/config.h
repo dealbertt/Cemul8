@@ -1,5 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
+
 #include <stdbool.h>
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -7,6 +8,7 @@
 typedef struct{
     bool debugOutput;
     short scalingFactor;
+    short color;
 }Config;
 
 typedef struct{
@@ -46,6 +48,6 @@ typedef struct{
     SDL_FRect timersTitleRect;
 }emulObjects;
 
-Config *readConfiguration(const char *path);
+Config *readConfiguration(const char *path, emulObjects *objects);
 
 #endif //CONFIG_H

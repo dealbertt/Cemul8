@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #include "../include/chip8.h"
 #include "../include/overlay.h"
 #include "../include/functions.h"
@@ -623,6 +622,11 @@ int handleRealKeyboard(){
             }
 
             if(event.key.scancode == SDL_SCANCODE_F4){
+                initialize();
+                loadProgram(objects.filename);
+                drawFlag = true;
+                SDL_Delay(1000);
+                printf("Emulator reset!\n");
             }
 
             if(event.key.scancode == SDL_SCANCODE_F5){
